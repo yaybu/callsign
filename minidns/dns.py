@@ -24,6 +24,15 @@ class RuntimeAuthority(FileAuthority):
         ))
         self.records[domain] = [self.soa[1]]
 
+    def set_record(self, name, value):
+        print "Setting", name, "=", value
+        self.records["%s.%s" % (name, self.soa[0])] = [Record_A(address=value)]
+
+    def a_records(self):
+        for k,v in self.records.items():
+            if isinstance(v, Record_A):
+                yield (k.rtrim(self.soa[0]), v.address)
+
 class DNSService(service.MultiService):
 
     implements(service.IServiceCollection)
@@ -42,5 +51,7 @@ class DNSService(service.MultiService):
             ]
 
     def set_record(self, name, value):
-        open("/tmp/foo", "w").write("%s %s" % (name, value))
+        self.authority.set_record(name, value)
 
+    def get_records(self):
+        return self.authority.a_records()

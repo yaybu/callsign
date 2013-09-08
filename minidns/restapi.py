@@ -32,7 +32,10 @@ class DomainResource(Resource):
         return ""
 
     def render_GET(self, request):
-        return "www 192.168.0.1"
+        l = []
+        for name, value in self.dnsserver.get_records():
+            l.append("%s %s" % (name, value))
+        return "\n".join(l)
 
     def getChild(self, path, request):
         return RecordResource(path, self.domain, self.config, self.dnsserver)
@@ -50,6 +53,7 @@ class RootResource(Resource):
     def getChild(self, path, request):
         if path == "":
             return self
+        path = path.rstrip(".")
         if path == self.config.domain:
             return DomainResource(path, self.config, self.dnsserver)
         else:
