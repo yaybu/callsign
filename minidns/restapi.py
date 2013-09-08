@@ -13,7 +13,8 @@ class RecordResource(Resource):
         self.dnsserver = dnsserver
 
     def render_POST(self, request):
-        data = request.content
+        data = request.content.read()
+        self.dnsserver.set_record(self.name, data)
         request.setResponseCode(201)
         return ""
 
