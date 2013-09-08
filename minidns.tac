@@ -7,7 +7,7 @@ class Config:
     udp_port = 5053
     tcp_port = 5053
     www_port = 5080
-    domain = "local.dev" + "." # needs the trailing dot
+    domain = "local.dev"
 
 application = service.Application("minidns")
 
