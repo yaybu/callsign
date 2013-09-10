@@ -1,5 +1,6 @@
 requests
 Twisted
+mock
 
 -e .
 
