@@ -5,40 +5,46 @@ from twisted.web.resource import Resource, NoResource
 
 class RecordResource(Resource):
 
-    def __init__(self, name, domain, config, dnsserver):
+    def __init__(self, name, zone):
         Resource.__init__(self)
         self.name = name
-        self.domain = domain
-        self.config = config
-        self.dnsserver = dnsserver
+        self.zone = zone
 
     def render_POST(self, request):
         data = request.content.read()
-        self.dnsserver.set_record(self.name, data)
+        self.zone.set_record(self.name, data)
         request.setResponseCode(201)
         return ""
 
 class DomainResource(Resource):
 
-    def __init__(self, domain, config, dnsserver):
+    def __init__(self, zone):
         Resource.__init__(self)
-        self.domain = domain
-        self.config = config
-        self.dnsserver = dnsserver
-
-    def render_PUT(self, request):
-        print request.__dict__
-        request.setResponseCode(201)
-        return ""
+        self.zone = zone
 
     def render_GET(self, request):
         l = []
-        for name, value in self.dnsserver.get_records():
+        for name, value in self.zone.get_records():
             l.append("%s %s" % (name, value))
         return "\n".join(l)
 
     def getChild(self, path, request):
-        return RecordResource(path, self.domain, self.config, self.dnsserver)
+        return RecordResource(path, self.zone)
+
+class MissingDomainResource(Resource):
+
+    """ A resource that can only be PUT to to create a new zone """
+
+    def __init__(self, name, factory):
+        Resource.__init__(self)
+        self.name = name
+        self.factory = factory
+
+    def render_PUT(self, request):
+        self.factory.add_zone(self.name)
+        request.setResponseCode(201)
+        return ""
+
 
 class RootResource(Resource):
 
@@ -54,10 +60,11 @@ class RootResource(Resource):
         if path == "":
             return self
         path = path.rstrip(".")
-        if path == self.config['domain']:
-            return DomainResource(path, self.config, self.dnsserver)
-        else:
-            return NoResource()
+        try:
+            zone = self.dnsserver.get_zone(path)
+            return DomainResource(zone)
+        except KeyError:
+            return MissingDomainResource(path, self.dnsserver.factory)
 
 def webservice(config, dnsserver):
     root = RootResource(config, dnsserver)

@@ -12,6 +12,7 @@ defaults = {
     "www_port": "5080",
     "domain": "local.dev",
     "forwarders": "8.8.8.8 8.8.4.4",
+    "statefile": "minidns.db",
 }
 
 int_fields = ["tcp_port", "udp_port", "www_port"]

@@ -5,7 +5,10 @@ from twisted.names.server import DNSServerFactory
 from twisted.names.client import createResolver
 from twisted.names.authority import FileAuthority
 from twisted.names.common import ResolverBase
+from twisted.names.resolve import ResolverChain
 from twisted.names.dns import DNSDatagramProtocol, Record_A, Record_SOA
+
+from itertools import chain
 
 class RuntimeAuthority(FileAuthority):
 
@@ -33,15 +36,55 @@ class RuntimeAuthority(FileAuthority):
             if isinstance(v, Record_A):
                 yield (k.rtrim(self.soa[0]), v.address)
 
+class MiniDNSResolverChain(ResolverChain):
+
+    def __init__(self, defaults):
+        ResolverBase.__init__(self)
+        self.defaults = defaults
+        self.authorities = {}
+
+    @property
+    def resolvers(self):
+        return list(chain(self.authorities.values(), self.defaults))
+
+    def get_zone(self, name):
+        return self.authorities[name]
+
+    def delete_zone(self, name):
+        print "Deleting zone", name
+        del self.authorities[name]
+
+    def add_zone(self, name):
+        print "Creating zone", name
+        self.authorities[name] = RuntimeAuthority(name)
+        return self.authorities[name]
+
+class MiniDNSServerFactory(DNSServerFactory):
+
+    def __init__(self, forwarders):
+        self.canRecurse = True
+        self.connections = []
+        forward_resolver = createResolver(servers=[(x, 53) for x in forwarders])
+        self.resolver = MiniDNSResolverChain([forward_resolver])
+        self.verbose = True
+
+    def add_zone(self, name):
+        return self.resolver.add_zone(name)
+
+    def delete_zone(self, name):
+        return self.resolver.delete_zone(name)
+
+    def get_zone(self, name):
+        return self.resolver.get_zone(name)
+
 class DNSService(service.MultiService):
 
     implements(service.IServiceCollection)
 
     def __init__(self, config):
         service.MultiService.__init__(self)
-        self.authority = RuntimeAuthority(config['domain'])
-        self.resolver = createResolver(servers=[(x, 53) for x in config['forwarders'].split()])
-        self.factory = DNSServerFactory(authorities=[self.authority], clients=[self.resolver])
+        self.authorities = []
+        self.factory = MiniDNSServerFactory(forwarders=config['forwarders'].split())
         self.protocol = DNSDatagramProtocol(self.factory)
         self.udpservice = internet.UDPServer(config['udp_port'], self.protocol)
         self.tcpservice = internet.TCPServer(config['tcp_port'], self.factory)
@@ -50,8 +93,6 @@ class DNSService(service.MultiService):
             self.tcpservice,
             ]
 
-    def set_record(self, name, value):
-        self.authority.set_record(name, value)
+    def get_zone(self, name):
+        return self.factory.get_zone(name)
 
-    def get_records(self):
-        return self.authority.a_records()
