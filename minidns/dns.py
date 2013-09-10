@@ -39,12 +39,12 @@ class DNSService(service.MultiService):
 
     def __init__(self, config):
         service.MultiService.__init__(self)
-        self.authority = RuntimeAuthority(config.domain)
-        self.resolver = createResolver(servers=[('8.8.8.8', 53), ('8.8.4.4', 53)])
+        self.authority = RuntimeAuthority(config['domain'])
+        self.resolver = createResolver(servers=[(x, 53) for x in config['forwarders'].split()])
         self.factory = DNSServerFactory(authorities=[self.authority], clients=[self.resolver])
         self.protocol = DNSDatagramProtocol(self.factory)
-        self.udpservice = internet.UDPServer(config.udp_port, self.protocol)
-        self.tcpservice = internet.TCPServer(config.tcp_port, self.factory)
+        self.udpservice = internet.UDPServer(config['udp_port'], self.protocol)
+        self.tcpservice = internet.TCPServer(config['tcp_port'], self.factory)
         self.services = [
             self.udpservice,
             self.tcpservice,

@@ -54,7 +54,7 @@ class RootResource(Resource):
         if path == "":
             return self
         path = path.rstrip(".")
-        if path == self.config.domain:
+        if path == self.config['domain']:
             return DomainResource(path, self.config, self.dnsserver)
         else:
             return NoResource()
@@ -62,4 +62,4 @@ class RootResource(Resource):
 def webservice(config, dnsserver):
     root = RootResource(config, dnsserver)
     site = Site(root)
-    return internet.TCPServer(config.www_port, site)
+    return internet.TCPServer(config['www_port'], site)

@@ -10,7 +10,7 @@ proj.directory-list = [{'dirloc': loc('minidns'),
                         'include_hidden': False,
                         'recursive': True,
                         'watch_for_changes': True}]
-proj.file-list = [loc('minidns.tac'),
+proj.file-list = [loc('minidns/scripts/minidns.tac'),
                   loc('requirements.txt'),
                   loc('setup.py')]
 proj.file-type = 'shared'

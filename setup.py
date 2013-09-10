@@ -10,7 +10,7 @@ setup(
     packages=find_packages(),
     entry_points = {
         "console_scripts": [
-            "minidns=minidns.scripts.minidns:run",
+            "minidns=minidns.scripts.server:run",
         ]
     }
 )
