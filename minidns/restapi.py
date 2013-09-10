@@ -33,7 +33,6 @@ class DomainResource(Resource):
         self.dnsserver = dnsserver
 
     def render_GET(self, request):
-        import wingdbstub
         l = []
         for type_, name, value in self.zone.a_records():
             l.append("%s %s %s" % (type_, name, value))
