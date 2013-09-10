@@ -8,6 +8,11 @@ setup(
     author="Doug Winter",
     author_email="doug.winter@isotoma.com",
     packages=find_packages(),
+    entry_points = {
+        "console_scripts": [
+            "minidns=minidns.scripts.minidns:run",
+        ]
+    }
 )
 
-      
+
