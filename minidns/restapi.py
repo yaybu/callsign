@@ -10,10 +10,15 @@ class RecordResource(Resource):
         self.name = name
         self.zone = zone
 
-    def render_POST(self, request):
+    def render_PUT(self, request):
         data = request.content.read()
         self.zone.set_record(self.name, data)
         request.setResponseCode(201)
+        return ""
+
+    def render_DELETE(self, requests):
+        self.zone.delete_record(self.name)
+        request.setResponseCode(204)
         return ""
 
 class DomainResource(Resource):
@@ -23,8 +28,9 @@ class DomainResource(Resource):
         self.zone = zone
 
     def render_GET(self, request):
+        import wingdbstub
         l = []
-        for name, value in self.zone.get_records():
+        for name, value in self.zone.a_records():
             l.append("%s %s" % (name, value))
         return "\n".join(l)
 
@@ -45,7 +51,6 @@ class MissingDomainResource(Resource):
         request.setResponseCode(201)
         return ""
 
-
 class RootResource(Resource):
 
     def __init__(self, config, dnsserver):
@@ -54,7 +59,7 @@ class RootResource(Resource):
         self.dnsserver = dnsserver
 
     def render_GET(self, request):
-        return self.config.domain + "\n"
+        return "\n".join(self.dnsserver.zones())
 
     def getChild(self, path, request):
         if path == "":
