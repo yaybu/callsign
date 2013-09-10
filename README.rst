@@ -32,8 +32,9 @@ For example::
 
 Usage::
 
-    Usage: minidns [options] {start|stop|add name|del name|list|show name|a fqdn ip}
-    daemon control:
+    Usage: minidns [options] command
+
+    daemon control commands:
         start  start the minidns server and forward localhost:53 to it
         stop   stop the minidns server and remove iptables rules
 
@@ -43,7 +44,7 @@ Usage::
         list      list all authoritative zones
         show name list records for the zone "name"
 
-    record maintenance:
+    record commands:
         record zone a host [data]   create A record
         record zone del host        delete record
 
@@ -54,3 +55,89 @@ Usage::
       -c CONFIG, --config=CONFIG
                             path to configuration file
       -n, --no-divert       Do not use iptables to divert port DNS locally
+
+API
+===
+
+MiniDNS is designed primarily to be used by automated deployment systems, and
+provides a simple REST API for these systems.
+
+The resources available on the web port are:
+
+Root resource: /
+----------------
+
+GET
+~~~
+
+Return a list of managed zones, one per line, separated by \n.  For example::
+
+    GET /
+
+    200 OK
+    example.com
+    foo.com
+
+Domain resource: /domain
+------------------------
+
+GET
+~~~
+
+Return the list of records within this domain, one per line, separated by \n.  For example::
+
+    GET /example.com
+
+    200 OK
+    A www 192.168.0.1
+
+PUT
+~~~
+
+Create this domain.  For example::
+
+    PUT /example.com
+
+    201 Created
+
+DELETE
+~~~~~~
+
+Delete this domain.  For example::
+
+    DELETE /example.com
+
+    204 No Content
+
+Record resource: /domain/host
+-----------------------------
+
+GET
+~~~
+
+Return the value for the record.  For example::
+
+    GET /example.com/www
+
+    200 OK
+    A 192.168.0.1
+
+PUT
+~~~
+
+Create the record. the payload should be the type and the data, separated by a space.  For example::
+
+    PUT /example.com/www
+    A 192.168.0.1
+
+    201 Created
+
+DELETE
+~~~~~~
+
+Delete the record. For example::
+
+    DELETE /example.com/www
+
+    204 No Content
+

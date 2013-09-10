@@ -8,8 +8,9 @@ import requests
 
 from minidns.config import config
 
-usage = """%prog [options] {start|stop|add name|del name|list|show name|a fqdn ip}
-daemon control:
+usage = """%prog [options] command
+
+daemon control commands:
     start  start the minidns server and forward localhost:53 to it
     stop   stop the minidns server and remove iptables rules
 
@@ -19,7 +20,7 @@ zone commands:
     list      list all authoritative zones
     show name list records for the zone "name"
 
-record maintenance:
+record commands:
     record zone a host [data]   create A record
     record zone del host        delete record
 

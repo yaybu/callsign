@@ -16,23 +16,31 @@ class RecordResource(Resource):
         request.setResponseCode(201)
         return ""
 
-    def render_DELETE(self, requests):
+    def render_DELETE(self, request):
         self.zone.delete_record(self.name)
         request.setResponseCode(204)
         return ""
 
+    def render_GET(self, request):
+        type_, ip = self.zone.get_record(self.name)
+        return "%s %s" % (type_, ip)
+
 class DomainResource(Resource):
 
-    def __init__(self, zone):
+    def __init__(self, zone, dnsserver):
         Resource.__init__(self)
         self.zone = zone
+        self.dnsserver = dnsserver
 
     def render_GET(self, request):
         import wingdbstub
         l = []
-        for name, value in self.zone.a_records():
-            l.append("%s %s" % (name, value))
+        for type_, name, value in self.zone.a_records():
+            l.append("%s %s %s" % (type_, name, value))
         return "\n".join(l)
+
+    def render_DELETE(self, request):
+        self.dnsserver.delete_zone(self.zone.soa[0])
 
     def getChild(self, path, request):
         return RecordResource(path, self.zone)
@@ -67,7 +75,7 @@ class RootResource(Resource):
         path = path.rstrip(".")
         try:
             zone = self.dnsserver.get_zone(path)
-            return DomainResource(zone)
+            return DomainResource(zone, self.dnsserver)
         except KeyError:
             return MissingDomainResource(path, self.dnsserver.factory)
 

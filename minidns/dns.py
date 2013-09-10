@@ -32,12 +32,17 @@ class RuntimeAuthority(FileAuthority):
         print "Setting", name, "=", value
         self.records["%s.%s" % (name, self.soa[0])] = [Record_A(address=value)]
 
+    def get_record(self, name):
+        r = self.records["%s.%s" % (name, self.soa[0])][0]
+        if isinstance(r, Record_A):
+            return ('A', v.dottedQuad())
+
     def a_records(self):
         import wingdbstub
         for k,v in self.records.items():
             v = v[0]
             if isinstance(v, Record_A):
-                yield (k.rstrip(self.soa[0]), v.dottedQuad())
+                yield ('A', k.rstrip(self.soa[0]), v.dottedQuad())
 
 class MiniDNSResolverChain(ResolverChain):
 
@@ -104,6 +109,9 @@ class DNSService(service.MultiService):
 
     def get_zone(self, name):
         return self.factory.get_zone(name)
+
+    def delete_zone(self, name):
+        return self.factory.delete_zone(name)
 
     def zones(self):
         return self.factory.zones()
