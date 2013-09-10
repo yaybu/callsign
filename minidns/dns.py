@@ -28,7 +28,6 @@ class RuntimeAuthority(FileAuthority):
         self.records[domain] = [self.soa[1]]
 
     def set_record(self, name, value):
-        import wingdbstub
         print "Setting", name, "=", value
         self.records["%s.%s" % (name, self.soa[0])] = [Record_A(address=value)]
 
@@ -38,7 +37,6 @@ class RuntimeAuthority(FileAuthority):
             return ('A', v.dottedQuad())
 
     def a_records(self):
-        import wingdbstub
         for k,v in self.records.items():
             v = v[0]
             if isinstance(v, Record_A):

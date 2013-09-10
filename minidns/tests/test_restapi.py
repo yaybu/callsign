@@ -27,3 +27,24 @@ class TestRootResource(unittest.TestCase):
         rv = self.resource.getChild("bar", None)
         self.assert_(isinstance(rv, MissingDomainResource))
         self.assertEqual(rv.name, "bar")
+
+class TestDomainResource(unittest.TestCase):
+
+    def setUp(self):
+        self.zone = MagicMock()
+        self.dnsserver = MagicMock()
+        self.resource = DomainResource(self.zone, self.dnsserver)
+
+    def test_GET(self):
+        data = [
+            ("A", "www", "192.168.0.1"),
+            ("A", "x", "192.168.0.2"),
+            ]
+        self.zone.a_records = MagicMock(return_value=data)
+        rv = self.resource.render_GET(None)
+        self.assertEqual(rv, "\n".join(["%s %s %s" % (x,y,z) for (x,y,z) in data]))
+
+class TestMissingDomainResource(unittest.TestCase):
+    pass
+
+
