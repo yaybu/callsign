@@ -6,3 +6,4 @@ include setup.py
 include MANIFEST.in
 include README.rst
 include LICENSE
+include CHANGES
