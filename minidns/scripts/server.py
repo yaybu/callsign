@@ -15,9 +15,10 @@ daemon control commands:
     stop   stop the minidns server and remove iptables rules
 
 zone commands:
+    list      list all authoritative zones
+    purge     delete all domains
     add name  add a new local authoritative zone "name"
     del name  delete the local authoritative zones "name"
-    list      list all authoritative zones
     show name list records for the zone "name"
 
 record commands:
@@ -98,6 +99,16 @@ class MiniDNSClient:
         else:
             self.handle_error(response)
 
+    def zone_purge(self):
+        response = requests.get(self.base_url)
+        if response.status_code == 200:
+            for zone in response.text.split():
+                self.zone_del(zone)
+        else:
+            self.handle_error(response)
+
+
+
     def zone_add(self, name):
         response = requests.put("%s/%s" % (self.base_url, name))
         if response.status_code != 201:
@@ -151,7 +162,7 @@ def run():
         parser.print_help()
         raise SystemExit(-1)
 
-    if args[0] in ("start", "stop", "list"):
+    if args[0] in ("start", "stop", "list", "purge"):
         if len(args) != 1:
             parser.print_help()
             raise SystemExit(-1)
@@ -170,6 +181,8 @@ def run():
         client.stop()
     elif args[0] == "list":
         client.zone_list()
+    elif args[0] == "purge":
+        client.zone_purge()
     elif args[0] == "add":
         client.zone_add(args[1])
     elif args[0] == "del":
