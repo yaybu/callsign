@@ -2,6 +2,10 @@
 minidns
 =======
 
+:Date: 2013-09-11
+:Author: Doug Winter <doug.winter@isotoma.com>
+:Website: http://github.com/yaybu/minidns
+
 Description
 ===========
 
@@ -55,6 +59,20 @@ Usage::
       -c CONFIG, --config=CONFIG
                             path to configuration file
       -n, --no-divert       Do not use iptables to divert port DNS locally
+
+iptables
+========
+
+As part of starting and stopping (unless the -n switch is provided), minidns
+makes some changes to your iptables nat configuration. This only works as-is if
+you are using localhost as your nameserver (which is quite a common
+configuration).
+
+iptables commands are issued to reroute localhost:53 to the minidns ports, so
+that it can transparently commandeer your local DNS.
+
+This mechanism was chosen as the least intrusive way of doing this, in
+particular it makes no changes to the files in /etc.
 
 API
 ===
