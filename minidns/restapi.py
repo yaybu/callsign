@@ -6,6 +6,10 @@ import socket
 
 class RecordResource(Resource):
 
+    err_invalid_body = 'Request body should be of the form "TYPE DATA"'
+    err_wrong_record_type = "Only A type records are supported"
+    err_malformed = "Malformed IP Address"
+
     def __init__(self, name, zone):
         Resource.__init__(self)
         self.name = name
@@ -16,15 +20,15 @@ class RecordResource(Resource):
         try:
             type_, ip = data.split()
         except ValueError:
-            request.setResponseCode(400, message='Request body should be of the form "TYPE DATA"')
+            request.setResponseCode(400, message=self.err_invalid_body)
             return ""
         if type_ != 'A':
-            request.setResponseCode(400, message="Only A type records are supported")
+            request.setResponseCode(400, message=self.err_wrong_record_type)
             return ""
         try:
             self.zone.set_record(self.name, ip)
         except socket.error:
-            request.setResponseCode(400, message="Malformed IP Address")
+            request.setResponseCode(400, message=self.err_malformed)
             return ""
         request.setResponseCode(201)
         return ""

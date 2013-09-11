@@ -1,6 +1,8 @@
 from twisted.trial import unittest
-from mock import MagicMock
+from mock import MagicMock, PropertyMock
 from minidns.restapi import RootResource, DomainResource, RecordResource, MissingDomainResource
+
+import socket
 
 class TestRootResource(unittest.TestCase):
 
@@ -45,6 +47,82 @@ class TestDomainResource(unittest.TestCase):
         self.assertEqual(rv, "\n".join(["%s %s %s" % (x,y,z) for (x,y,z) in data]))
 
 class TestMissingDomainResource(unittest.TestCase):
-    pass
+
+    def setUp(self):
+        self.name = "foo"
+        self.dnsserver = MagicMock()
+        self.resource = MissingDomainResource(self.name, self.dnsserver)
+
+    def test_GET(self):
+        request = MagicMock()
+        rv = self.resource.render_GET(request)
+        request.setResponseCode.assert_called_once_with(404)
+
+    def test_PUT(self):
+        request = MagicMock()
+        rv = self.resource.render_PUT(request)
+        self.dnsserver.add_zone.assert_called_once_with(self.name)
+        request.setResponseCode.assert_called_once_with(201)
+
+    def test_HEAD(self):
+        request = MagicMock()
+        rv = self.resource.render_GET(request)
+        request.setResponseCode.assert_called_once_with(404)
+
+    def test_DELETE(self):
+        request = MagicMock()
+        rv = self.resource.render_GET(request)
+        request.setResponseCode.assert_called_once_with(404)
+
+class TestRecordResource(unittest.TestCase):
+
+    def setUp(self):
+        self.name = "foo"
+        self.zone = MagicMock()
+        self.resource = RecordResource(self.name, self.zone)
+
+    def test_PUT(self):
+        request = MagicMock()
+        request.content.read.return_value = "A 192.168.0.1"
+        self.resource.render_PUT(request)
+        self.zone.set_record.assert_called_once_with(self.name, "192.168.0.1")
+        request.setResponseCode.assert_called_once_with(201)
+
+    def test_PUT_invalid_body(self):
+        request = MagicMock()
+        request.content.read.return_value = "wrong"
+        self.resource.render_PUT(request)
+        request.setResponseCode.assert_called_once_with(400, message=self.resource.err_invalid_body)
+
+    def test_PUT_wrong_record_type(self):
+        request = MagicMock()
+        request.content.read.return_value = "MX 192.168.0.1"
+        self.resource.render_PUT(request)
+        request.setResponseCode.assert_called_once_with(400, message=self.resource.err_wrong_record_type)
+
+    def test_PUT_malformed(self):
+        request = MagicMock()
+        request.content.read.return_value = "A foo"
+        self.zone.set_record.side_effect = socket.error()
+        self.resource.render_PUT(request)
+        request.setResponseCode.assert_called_once_with(400, message=self.resource.err_malformed)
+
+    def test_DELETE(self):
+        request = MagicMock()
+        self.resource.render_DELETE(request)
+        self.zone.delete_record.assert_called_once_with(self.name)
+        request.setResponseCode.assert_called_once_with(204)
+
+    def test_DELETE_missing(self):
+        request = MagicMock()
+        self.zone.delete_record.side_effect = KeyError()
+        self.resource.render_DELETE(request)
+        self.zone.delete_record.assert_called_once_with(self.name)
+        request.setResponseCode.assert_called_once_with(404)
+
+    def test_GET(self):
+        self.zone.get_record.return_value = ("A", "192.168.0.1")
+        rv = self.resource.render_GET(None)
+        self.assertEqual(rv, "A 192.168.0.1")
 
 
