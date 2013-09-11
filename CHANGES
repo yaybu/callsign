@@ -1,7 +1,7 @@
 Changelog for minidns
 =====================
 
-0.2 (unreleased)
+0.2 (2013-09-11)
 ----------------
 
 - Updated response on PUT to domain from 405 to 200 if it already exists
