@@ -15,13 +15,32 @@
 
 from setuptools import setup, find_packages
 
+version = '0.1'
+
 setup(
     name="minidns",
-    version="0.1",
-    description="Support local development with DNS",
+    version=version,
+    description="Simple DNS Server with REST API, for localhost only",
+    long_description=open("README.rst").read(),
     author="Doug Winter",
     author_email="doug.winter@isotoma.com",
+    license="Apache Software License",
+    classifiers = [
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Framework :: Twisted",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Topic :: Internet :: Name Service (DNS)",
+        ],
     packages=find_packages(),
+    install_requires=[
+        'Twisted',
+        'requests',
+    ],
+    extras_require = {
+        'test': ['mock'],
+    },
     entry_points = {
         "console_scripts": [
             "minidns=minidns.scripts.server:run",
