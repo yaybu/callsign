@@ -21,10 +21,13 @@ setup(
     name="minidns",
     version=version,
     description="Simple DNS Server with REST API, for localhost only",
+    url="http://github.com/yaybu/minidns",
     long_description=open("README.rst").read(),
     author="Doug Winter",
     author_email="doug.winter@isotoma.com",
     license="Apache Software License",
+    include_package_data=True,
+    zip_safe=False,
     classifiers = [
         "Development Status :: 4 - Beta",
         "Environment :: Console",
