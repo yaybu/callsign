@@ -43,7 +43,7 @@ class RuntimeAuthority(FileAuthority):
         for k,v in self.records.items():
             v = v[0]
             if isinstance(v, Record_A):
-                yield ('A', k.rstrip(self.soa[0]), v.dottedQuad())
+                yield ('A', k.rstrip(self.soa[0]).rstrip("."), v.dottedQuad())
 
 class MiniDNSResolverChain(ResolverChain):
 

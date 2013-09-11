@@ -107,8 +107,6 @@ class MiniDNSClient:
         else:
             self.handle_error(response)
 
-
-
     def zone_add(self, name):
         response = requests.put("%s/%s" % (self.base_url, name))
         if response.status_code != 201:
@@ -133,7 +131,7 @@ class MiniDNSClient:
             if response.text:
                 for line in response.text.split("\n"):
                     type_, host, ip = line.split()
-                    print "%s%s" % (host, name) , type_, ip
+                    print host, type_, ip
             else:
                 print "Zone %s is managed, but there are no records for it" % name
 
