@@ -94,15 +94,22 @@ class MiniDNSClient:
         requests.put("%s/%s" % (self.base_url, name))
 
     def zone_del(self, name):
-        requests.delete("%s/%s" % (self.base_url, name))
+        response = requests.delete("%s/%s" % (self.base_url, name))
+        if response.status_code == 404:
+            print "Error: Zone %r is not managed by minidns" % name
+        print response.status_code
 
     def zone_show(self, name):
-        response = requests.get("%s/%s" % (self.base_url, name)).text
-        if response:
-            print response
+        response = requests.get("%s/%s" % (self.base_url, name))
+        if response.status_code == 404:
+            print "Error: Zone %r is not managed by minidns" % name
+        else:
+            print response.text
 
     def record_a(self, zone, host, data):
-        requests.put("%s/%s/%s" % (self.base_url, zone, host), data=data)
+        response = requests.put("%s/%s/%s" % (self.base_url, zone, host), data=data)
+        if response.status_code == 404:
+            print "Error: Zone %r is not managed by minidns" % zone
 
     def record_del(self, zone, host):
         requests.delete("%s/%s/%s" % (self.base_url, zone, host))
@@ -158,6 +165,9 @@ def run():
             client.record_a(zone, host, data)
         elif command == "del":
             client.record_del(zone, host)
+        else:
+            parser.print_help()
+            return 255
     else:
         parser.print_help()
         return 255

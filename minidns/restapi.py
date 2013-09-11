@@ -58,6 +58,18 @@ class MissingDomainResource(Resource):
         request.setResponseCode(201)
         return ""
 
+    def render_GET(self, request):
+        request.setResponseCode(404)
+        return ""
+
+    def render_HEAD(self, request):
+        request.setResponseCode(404)
+        return ""
+
+    def render_DELETE(self, request):
+        request.setResponseCode(404)
+        return ""
+
 class RootResource(Resource):
 
     def __init__(self, config, dnsserver):
@@ -78,7 +90,12 @@ class RootResource(Resource):
         except KeyError:
             return MissingDomainResource(path, self.dnsserver.factory)
 
+class MiniDNSSite(Site):
+
+    def log(self, *a, **kw):
+        pass
+
 def webservice(config, dnsserver):
     root = RootResource(config, dnsserver)
-    site = Site(root)
+    site = MiniDNSSite(root)
     return internet.TCPServer(config['www_port'], site)

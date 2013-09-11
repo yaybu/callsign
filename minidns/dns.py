@@ -61,9 +61,11 @@ class MiniDNSResolverChain(ResolverChain):
         del self.authorities[name]
 
     def add_zone(self, name):
-        print "Creating zone", name
-        self.authorities[name] = RuntimeAuthority(name)
-        return self.authorities[name]
+        if name not in self.authorities:
+            print "Creating zone", name
+            self.authorities[name] = RuntimeAuthority(name)
+        else:
+            print "Not clobbering existing zone"
 
     def zones(self):
         return self.authorities.keys()
@@ -75,7 +77,7 @@ class MiniDNSServerFactory(DNSServerFactory):
         self.connections = []
         forward_resolver = createResolver(servers=[(x, 53) for x in forwarders])
         self.resolver = MiniDNSResolverChain([forward_resolver])
-        self.verbose = True
+        self.verbose = False
 
     def add_zone(self, name):
         return self.resolver.add_zone(name)
