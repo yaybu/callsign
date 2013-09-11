@@ -2,6 +2,7 @@ from zope.interface import implements
 from twisted.application import internet
 from twisted.web.server import Site
 from twisted.web.resource import Resource, NoResource
+import socket
 
 class RecordResource(Resource):
 
@@ -12,12 +13,20 @@ class RecordResource(Resource):
 
     def render_PUT(self, request):
         data = request.content.read()
-        self.zone.set_record(self.name, data)
+        try:
+            self.zone.set_record(self.name, data)
+        except socket.error:
+            request.setResponseCode(400)
+            return ""
         request.setResponseCode(201)
         return ""
 
     def render_DELETE(self, request):
-        self.zone.delete_record(self.name)
+        try:
+            self.zone.delete_record(self.name)
+        except KeyError:
+            request.setResponseCode(404)
+            return ""
         request.setResponseCode(204)
         return ""
 
@@ -40,6 +49,12 @@ class DomainResource(Resource):
 
     def render_DELETE(self, request):
         self.dnsserver.delete_zone(self.zone.soa[0])
+        request.setResponseCode(204)
+        return ""
+
+    def render_PUT(self, request):
+        request.setResponseCode(405)
+        return ""
 
     def getChild(self, path, request):
         return RecordResource(path, self.zone)

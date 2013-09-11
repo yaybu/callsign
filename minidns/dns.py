@@ -36,6 +36,9 @@ class RuntimeAuthority(FileAuthority):
         if isinstance(r, Record_A):
             return ('A', v.dottedQuad())
 
+    def delete_record(self, name):
+        del self.records["%s.%s" % (name, self.soa[0])]
+
     def a_records(self):
         for k,v in self.records.items():
             v = v[0]
