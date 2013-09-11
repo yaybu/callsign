@@ -79,7 +79,7 @@ class DomainResource(Resource):
         return ""
 
     def render_PUT(self, request):
-        request.setResponseCode(405)
+        request.setResponseCode(200)
         return ""
 
     def getChild(self, path, request):

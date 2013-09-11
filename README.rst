@@ -136,7 +136,7 @@ Create this domain.  For example::
 Possible status code responses are:
 
  * *201* Created (success)
- * *405* Domain already exists
+ * *200* Domain already exists, unchanged
 
 DELETE
 ~~~~~~

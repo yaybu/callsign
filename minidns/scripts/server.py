@@ -125,7 +125,7 @@ class MiniDNSClient:
         response = requests.put("%s/%s" % (self.base_url, name))
         if response.status_code != 201:
             self.handle_error(response, {
-                405: "Domain already exists"
+                200: "Domain already exists. Not changed."
             })
 
     def zone_del(self, name):
