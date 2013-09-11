@@ -14,9 +14,17 @@ class RecordResource(Resource):
     def render_PUT(self, request):
         data = request.content.read()
         try:
-            self.zone.set_record(self.name, data)
+            type_, ip = data.split()
+        except ValueError:
+            request.setResponseCode(400, message='Request body should be of the form "TYPE DATA"')
+            return ""
+        if type_ != 'A':
+            request.setResponseCode(400, message="Only A type records are supported")
+            return ""
+        try:
+            self.zone.set_record(self.name, ip)
         except socket.error:
-            request.setResponseCode(400)
+            request.setResponseCode(400, message="Malformed IP Address")
             return ""
         request.setResponseCode(201)
         return ""

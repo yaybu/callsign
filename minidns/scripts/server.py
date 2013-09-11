@@ -127,11 +127,11 @@ class MiniDNSClient:
                 print "Zone %s is managed, but there are no records for it" % name
 
     def record_a(self, zone, host, data):
-        response = requests.put("%s/%s/%s" % (self.base_url, zone, host), data=data)
+        response = requests.put("%s/%s/%s" % (self.base_url, zone, host), data="A %s" % data)
         if response.status_code != 201:
             self.handle_error(response, {
                 404: "Error: Zone %r is not managed by minidns" % zone,
-                400: "Malformed IP Address",
+                400: response.reason
                 })
 
     def record_del(self, zone, host):

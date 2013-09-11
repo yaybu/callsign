@@ -62,6 +62,12 @@ API
 MiniDNS is designed primarily to be used by automated deployment systems, and
 provides a simple REST API for these systems.
 
+In general you should expect the following response codes on a successful request:
+
+ * GET requests return 200 on success
+ * PUT requests return 201 on success
+ * DELETE requests return 204 on success
+
 The resources available on the web port are:
 
 Root resource: /
@@ -78,6 +84,10 @@ Return a list of managed zones, one per line, separated by \n.  For example::
     example.com
     foo.com
 
+Possible status code responses are:
+
+ * *200* Success
+
 Domain resource: /domain
 ------------------------
 
@@ -91,6 +101,11 @@ Return the list of records within this domain, one per line, separated by \n.  F
     200 OK
     A www 192.168.0.1
 
+Possible status code responses are:
+
+ * *200* Success
+ * *404* Domain not found. The domain has not been created as an authoritative zone in minidns.
+
 PUT
 ~~~
 
@@ -100,6 +115,11 @@ Create this domain.  For example::
 
     201 Created
 
+Possible status code responses are:
+
+ * *201* Created (success)
+ * *405* Domain already exists
+
 DELETE
 ~~~~~~
 
@@ -108,6 +128,11 @@ Delete this domain.  For example::
     DELETE /example.com
 
     204 No Content
+
+Possible status code responses are:
+
+ * *204* Success
+ * *404* Domain not found. The domain has not been created as an authoritative zone in minidns.
 
 Record resource: /domain/host
 -----------------------------
@@ -122,6 +147,11 @@ Return the value for the record.  For example::
     200 OK
     A 192.168.0.1
 
+Possible status code responses are:
+
+ * *200* Success
+ * *404* Record not found
+
 PUT
 ~~~
 
@@ -132,6 +162,12 @@ Create the record. the payload should be the type and the data, separated by a s
 
     201 Created
 
+Possible status code responses are:
+
+ * *201* Created (success)
+ * *404* Zone not found
+ * *400* Malformed request. The reason message will provide more details.
+
 DELETE
 ~~~~~~
 
@@ -140,4 +176,9 @@ Delete the record. For example::
     DELETE /example.com/www
 
     204 No Content
+
+Possible status code responses are:
+
+ * *204* Success
+ * *404* Domain or record not found
 
