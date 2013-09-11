@@ -4,7 +4,7 @@ Changelog for minidns
 0.3 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fix bug in get_record
 
 
 0.2 (2013-09-11)
