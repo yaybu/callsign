@@ -22,6 +22,8 @@ from twisted.names.common import ResolverBase
 from twisted.names.resolve import ResolverChain
 from twisted.names.dns import DNSDatagramProtocol, Record_A, Record_SOA
 
+from twisted.python import log
+
 from itertools import chain
 
 class RuntimeAuthority(FileAuthority):
@@ -92,9 +94,15 @@ class MiniDNSServerFactory(DNSServerFactory):
     def __init__(self, forwarders):
         self.canRecurse = True
         self.connections = []
+        self.forwarders = forwarders
         forward_resolver = createResolver(servers=[(x, 53) for x in forwarders])
         self.resolver = MiniDNSResolverChain([forward_resolver])
         self.verbose = False
+
+    def doStart(self):
+        if not self.numPorts:
+            log.msg("Starting DNS Server using these forwarders: %s" % (",".join(self.forwarders)))
+        self.numPorts = self.numPorts + 1
 
     def add_zone(self, name):
         return self.resolver.add_zone(name)

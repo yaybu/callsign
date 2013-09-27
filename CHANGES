@@ -5,7 +5,7 @@ Changelog for minidns
 ----------------
 
 - Allow domain list to be locked down using the configuration file
-
+- Use nameservers listed in /etc/resolv.conf if they are not localhost, otherwise default to Google's
 
 0.3 (2013-09-11)
 ----------------
