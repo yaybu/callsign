@@ -72,7 +72,7 @@ class MiniDNSClient:
         if not self.opts.no_divert:
             self.iptables_divert()
         if self.opts.config is not None:
-            os.environ["MINIDNS_CONFIG_FILE"] = opts.config
+            os.environ["MINIDNS_CONFIG_FILE"] = self.opts.config
         sys.argv[1:] = [
             "-oy", sibpath(__file__, "minidns.tac"),
             "--pidfile", self.conf['pidfile'],
@@ -125,7 +125,8 @@ class MiniDNSClient:
         response = requests.put("%s/%s" % (self.base_url, name))
         if response.status_code != 201:
             self.handle_error(response, {
-                200: "Domain already exists. Not changed."
+                200: "Domain already exists. Not changed.",
+                403: "Forbidden: domain is not allowed."
             })
 
     def zone_del(self, name):

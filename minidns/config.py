@@ -24,7 +24,7 @@ defaults = {
     "tcp_port": "5053",
     "udp_port": "5053",
     "www_port": "5080",
-    "domain": "local.dev",
+    "domains": "",
     "forwarders": "8.8.8.8 8.8.4.4",
     "statefile": "minidns.db",
 }

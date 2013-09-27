@@ -111,12 +111,24 @@ class MissingDomainResource(Resource):
         request.setResponseCode(404)
         return ""
 
+class ForbiddenDomainResource(MissingDomainResource):
+
+    def render_PUT(self, request):
+        request.setResponseCode(403)
+        return ""
+
 class RootResource(Resource):
 
     def __init__(self, config, dnsserver):
         Resource.__init__(self)
         self.config = config
         self.dnsserver = dnsserver
+
+    def allowed_domain(self, domain):
+        if self.config.get("domains") == "":
+            return True
+        domains = self.config.get("domains").split()
+        return domain in domains
 
     def render_GET(self, request):
         return "\n".join(self.dnsserver.zones())
@@ -129,7 +141,11 @@ class RootResource(Resource):
             zone = self.dnsserver.get_zone(path)
             return DomainResource(zone, self.dnsserver)
         except KeyError:
-            return MissingDomainResource(path, self.dnsserver.factory)
+            if self.allowed_domain(path):
+                resource_type = MissingDomainResource
+            else:
+                resource_type = ForbiddenDomainResource
+            return resource_type(path, self.dnsserver.factory)
 
 class MiniDNSSite(Site):
 

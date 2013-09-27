@@ -14,7 +14,11 @@
 
 from twisted.trial import unittest
 from mock import MagicMock, PropertyMock
-from minidns.restapi import RootResource, DomainResource, RecordResource, MissingDomainResource
+from minidns.restapi import (RootResource, DomainResource,
+                             RecordResource,
+                             MissingDomainResource,
+                             ForbiddenDomainResource,
+                             NoResource)
 
 import socket
 
@@ -31,6 +35,7 @@ class TestRootResource(unittest.TestCase):
         self.assertEqual(rv, "\n".join(["foo", "bar"]))
 
     def test_getChild_exists(self):
+        self.config.get = MagicMock(return_value="")
         zone = MagicMock()
         def get_zone(x):
             if x == "foo":
@@ -43,6 +48,24 @@ class TestRootResource(unittest.TestCase):
         rv = self.resource.getChild("bar", None)
         self.assert_(isinstance(rv, MissingDomainResource))
         self.assertEqual(rv.name, "bar")
+
+    def test_getChild_exists_with_lockdown(self):
+        self.config.get = MagicMock(return_value="foo bar")
+        zone = MagicMock()
+        def get_zone(x):
+            if x == "foo":
+                return zone
+            raise KeyError
+        self.dnsserver.get_zone.side_effect = get_zone
+        rv = self.resource.getChild("foo", None)
+        self.assert_(isinstance(rv, DomainResource))
+        self.assertEqual(rv.zone, zone)
+        rv = self.resource.getChild("bar", None)
+        self.assert_(isinstance(rv, MissingDomainResource))
+        self.assertEqual(rv.name, "bar")
+        rv = self.resource.getChild("baz", None)
+        self.assert_(isinstance(rv, ForbiddenDomainResource))
+
 
 class TestDomainResource(unittest.TestCase):
 

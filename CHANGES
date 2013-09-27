@@ -4,7 +4,7 @@ Changelog for minidns
 0.4 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Allow domain list to be locked down using the configuration file
 
 
 0.3 (2013-09-11)

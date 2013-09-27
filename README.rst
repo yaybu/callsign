@@ -137,6 +137,7 @@ Possible status code responses are:
 
  * *201* Created (success)
  * *200* Domain already exists, unchanged
+ * *403* Domain is forbidden (it is not in the list of allowed domains in the configuration file)
 
 DELETE
 ~~~~~~
@@ -214,6 +215,9 @@ If you wish, you can provide a file with the following format::
     www_port = 5080
     pidfile = minidns.pid
     logfile = minidns.log
+    domains = foo bar baz
+
+If any domains are listed then only those domains will be allowed
 
 LICENSE
 =======
