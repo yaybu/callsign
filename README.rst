@@ -12,6 +12,16 @@ Description
 Small DNS service to support local development. The server listens by default
 on port 5053. iptables is used to forward requests to localhost:53 to localhost:5053 instead.
 
+This will only work for you if your computer is using localhost as it's
+nameserver. This will be the case if you are running BIND, or dnsmasq or
+something similar. If you have a line like::
+
+    nameserver 127.0.0.1
+
+Or something similar (127.anything) then this should work for you. If you have
+other nameservers in there you will first need to install and configure BIND,
+then minidns will work for you.
+
 The DNS service provides recursive queries, so you can continue to use DNS as usual.
 
 You can then set new authoritative domains and A records that are available
