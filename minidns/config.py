@@ -21,7 +21,6 @@ from ConfigParser import ConfigParser
 defaults = {
     "pidfile": "minidns.pid",
     "logfile": "minidns.log",
-    "tcp_port": "5053",
     "udp_port": "5053",
     "www_port": "5080",
     "domains": "",
@@ -29,7 +28,7 @@ defaults = {
     "statefile": "minidns.db",
 }
 
-int_fields = ["tcp_port", "udp_port", "www_port"]
+int_fields = ["udp_port", "www_port"]
 
 def get_resolv_nameservers():
     try:

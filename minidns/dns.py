@@ -126,10 +126,8 @@ class DNSService(service.MultiService):
         self.factory = MiniDNSServerFactory(forwarders=config['forwarders'].split())
         self.protocol = DNSDatagramProtocol(self.factory)
         self.udpservice = internet.UDPServer(config['udp_port'], self.protocol)
-        self.tcpservice = internet.TCPServer(config['tcp_port'], self.factory)
         self.services = [
             self.udpservice,
-            self.tcpservice,
             ]
 
     def get_zone(self, name):

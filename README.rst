@@ -211,7 +211,6 @@ If you wish, you can provide a file with the following format::
     [minidns]
     forwarders = 8.8.8.8 8.8.4.4
     udp_port = 5053
-    tcp_port = 5053
     www_port = 5080
     pidfile = minidns.pid
     logfile = minidns.log

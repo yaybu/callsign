@@ -47,12 +47,12 @@ class MiniDNSClient:
         self.opts = opts
         self.conf = conf
 
-    def iptables_cmd(self, action, protocol, port):
+    def iptables_cmd(self, action, port):
         command = [
             "sudo", "iptables",
             "-tnat",
             action, "OUTPUT",
-            "-p", protocol,
+            "-p", "udp",
             "-d127.0.0.0/8",
             "--dport", "53",
             "-j", "REDIRECT",
@@ -61,12 +61,10 @@ class MiniDNSClient:
         rv = call(command)
 
     def iptables_divert(self):
-        self.iptables_cmd("-A", "tcp", self.conf['tcp_port'])
-        self.iptables_cmd("-A", "udp", self.conf['udp_port'])
+        self.iptables_cmd("-A", self.conf['udp_port'])
 
     def iptables_undivert(self):
-        self.iptables_cmd("-D", "tcp", self.conf['tcp_port'])
-        self.iptables_cmd("-D", "udp", self.conf['udp_port'])
+        self.iptables_cmd("-D", self.conf['udp_port'])
 
     def start(self):
         if not self.opts.no_divert:
