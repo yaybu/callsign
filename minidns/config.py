@@ -30,25 +30,7 @@ defaults = {
 
 int_fields = ["udp_port", "www_port"]
 
-def get_resolv_nameservers():
-    try:
-        r = open("/etc/resolv.conf")
-    except IOError:
-        raise IOError("Unable to open /etc/resolv.conf, cannot find nameservers. Please list nameservers in the configuration file")
-    for l in r:
-        parts = l.split()
-        if parts[0] == "nameserver":
-            if not parts[1].startswith("127"):
-                yield parts[1]
-
-def set_forwarders():
-    """ Try to identify which forwarders are used locally. """
-    nameservers = list(get_resolv_nameservers())
-    if nameservers:
-        defaults['forwarders'] = " ".join(nameservers)
-
 def config(pathname):
-    set_forwarders()
     if pathname is not None:
         cp = ConfigParser()
         cp.read(pathname)
