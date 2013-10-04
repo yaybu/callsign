@@ -36,8 +36,8 @@ zone commands:
     show name list records for the zone "name"
 
 record commands:
-    record zone a host [data]   create A record
-    record zone del host        delete record
+    record [zone] a [host] [data]   create A record
+    record [zone] del [host]        delete record
 
     e.g. record example.com a www 192.168.0.1"""
 

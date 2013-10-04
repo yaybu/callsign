@@ -225,6 +225,7 @@ If you wish, you can provide a file with the following format::
     pidfile = minidns.pid
     logfile = minidns.log
     domains = foo bar baz
+    savedir = ~/.minidns
 
 If any domains are listed then only those domains will be allowed
 

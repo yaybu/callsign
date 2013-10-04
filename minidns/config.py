@@ -13,7 +13,6 @@
 #   limitations under the License.
 
 
-
 """ ConfigParser is a load of rubbish. """
 
 from ConfigParser import ConfigParser
@@ -25,7 +24,7 @@ defaults = {
     "www_port": "5080",
     "domains": "",
     "forwarders": "8.8.8.8 8.8.4.4",
-    "statefile": "minidns.db",
+    "savedir": "~/.minidns",
 }
 
 int_fields = ["udp_port", "www_port"]

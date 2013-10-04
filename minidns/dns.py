@@ -21,18 +21,48 @@ from twisted.names.authority import FileAuthority
 from twisted.names.common import ResolverBase
 from twisted.names.resolve import ResolverChain
 from twisted.names.dns import DNSDatagramProtocol, Record_A, Record_SOA
-
 from twisted.python import log
 
 from itertools import chain
+import os
+import json
 
 class RuntimeAuthority(FileAuthority):
 
-    def __init__(self, domain):
+    def __init__(self, domain, savedir):
+        self.savefile = os.path.join(savedir, domain)
         ResolverBase.__init__(self)
         self._cache = {}
         self.records = {}
-        self.soa = (domain, Record_SOA(
+        self.domain = domain
+        self.load()
+        if not self.records:
+            self.create_soa()
+            self.save()
+
+    def save(self):
+        data = {}
+        for name, value in self.records.items():
+            if isinstance(value[0], Record_A):
+                data[name] = {
+                    'type': 'A',
+                    'value': value[0].dottedQuad(),
+                    }
+
+        f = open(self.savefile + ".tmp", "w")
+        json.dump(data, f)
+        f.close()
+        os.rename(self.savefile + ".tmp", self.savefile)
+
+    def load(self):
+        if os.path.exists(self.savefile):
+            data = json.load(open(self.savefile))
+            for name, value in data.items():
+                if value['type'] == 'A':
+                    self.set_record(name, value['value'])
+
+    def create_soa(self):
+        soa = Record_SOA(
             mname='localhost',
             rname='root.localhost',
             serial=1,
@@ -40,33 +70,36 @@ class RuntimeAuthority(FileAuthority):
             retry="1H",
             expire="1H",
             minimum="1"
-        ))
-        self.records[domain] = [self.soa[1]]
+        )
+        self.records[self.domain] = [soa]
 
     def set_record(self, name, value):
         print "Setting", name, "=", value
-        self.records["%s.%s" % (name, self.soa[0])] = [Record_A(address=value)]
+        self.records["%s.%s" % (name, self.domain)] = [Record_A(address=value)]
+        self.save()
 
     def get_record(self, name):
-        r = self.records["%s.%s" % (name, self.soa[0])][0]
+        r = self.records["%s.%s" % (name, self.domain)][0]
         if isinstance(r, Record_A):
             return ('A', r.dottedQuad())
 
     def delete_record(self, name):
-        del self.records["%s.%s" % (name, self.soa[0])]
+        del self.records["%s.%s" % (name, self.domain)]
+        self.save()
 
     def a_records(self):
         for k,v in self.records.items():
             v = v[0]
             if isinstance(v, Record_A):
-                yield ('A', k.rstrip(self.soa[0]).rstrip("."), v.dottedQuad())
+                yield ('A', k.rstrip(self.domain).rstrip("."), v.dottedQuad())
 
 class MiniDNSResolverChain(ResolverChain):
 
-    def __init__(self, defaults):
+    def __init__(self, defaults, savedir):
         ResolverBase.__init__(self)
         self.defaults = defaults
         self.authorities = {}
+        self.savedir = savedir
 
     @property
     def resolvers(self):
@@ -82,7 +115,7 @@ class MiniDNSResolverChain(ResolverChain):
     def add_zone(self, name):
         if name not in self.authorities:
             print "Creating zone", name
-            self.authorities[name] = RuntimeAuthority(name)
+            self.authorities[name] = RuntimeAuthority(name, self.savedir)
         else:
             print "Not clobbering existing zone"
 
@@ -91,18 +124,30 @@ class MiniDNSResolverChain(ResolverChain):
 
 class MiniDNSServerFactory(DNSServerFactory):
 
-    def __init__(self, forwarders):
+    def __init__(self, forwarders, savedir):
         self.canRecurse = True
         self.connections = []
         self.forwarders = forwarders
         forward_resolver = createResolver(servers=[(x, 53) for x in forwarders])
-        self.resolver = MiniDNSResolverChain([forward_resolver])
+        self.savedir = savedir
+        if self.savedir is not None:
+            self.savedir = os.path.expanduser(self.savedir)
+            if not os.path.exists(self.savedir):
+                log.msg("Setting up save directory " + savedir)
+                os.mkdir(self.savedir)
+        self.resolver = MiniDNSResolverChain([forward_resolver], self.savedir)
         self.verbose = False
+        self.load()
 
     def doStart(self):
         if not self.numPorts:
             log.msg("Starting DNS Server using these forwarders: %s" % (",".join(self.forwarders)))
         self.numPorts = self.numPorts + 1
+        self.load()
+
+    def load(self):
+        for f in os.listdir(self.savedir):
+            self.add_zone(f)
 
     def add_zone(self, name):
         return self.resolver.add_zone(name)
@@ -123,7 +168,8 @@ class DNSService(service.MultiService):
     def __init__(self, config):
         service.MultiService.__init__(self)
         self.authorities = []
-        self.factory = MiniDNSServerFactory(forwarders=config['forwarders'].split())
+        savedir = config.get("savedir")
+        self.factory = MiniDNSServerFactory(config['forwarders'].split(), savedir)
         self.protocol = DNSDatagramProtocol(self.factory)
         self.udpservice = internet.UDPServer(config['udp_port'], self.protocol)
         self.services = [
