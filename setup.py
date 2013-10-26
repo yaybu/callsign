@@ -46,7 +46,7 @@ setup(
     },
     entry_points = {
         "console_scripts": [
-            "minidns=minidns.scripts.server:run",
+            "minidns=minidns.scripts.command:run",
         ]
     }
 )
