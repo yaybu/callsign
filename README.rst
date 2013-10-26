@@ -9,18 +9,12 @@ minidns
 Description
 ===========
 
-Small DNS service to support local development. The server listens by default
-on port 5053. iptables is used to forward requests to localhost:53 to localhost:5053 instead.
+MiniDNS is a DNS server for developers. It is intended to serve DNS only for a
+single machine - your desktop. It will support automated deployment systems
+that coordinate with DNS services, for example Yaybu.
 
-This will only work for you if your computer is using localhost as it's
-nameserver. This will be the case if you are running BIND, or dnsmasq or
-something similar. If you have a line like::
-
-    nameserver 127.0.0.1
-
-Or something similar (127.anything) then this should work for you. If you have
-other nameservers in there you will first need to install and configure BIND,
-then minidns will work for you.
+Desktops vary in their client DNS configuration quite widely, and MiniDNS
+supports a number of different modes to enable it to service your DNS effectively.
 
 The DNS service provides recursive queries, so you can continue to use DNS as usual.
 
@@ -68,21 +62,75 @@ Usage::
       -h, --help            show this help message and exit
       -c CONFIG, --config=CONFIG
                             path to configuration file
-      -n, --no-divert       Do not use iptables to divert port DNS locally
 
-iptables
-========
+Modes of operation
+==================
 
-As part of starting and stopping (unless the -n switch is provided), minidns
-makes some changes to your iptables nat configuration. This only works as-is if
-you are using localhost as your nameserver (which is quite a common
-configuration).
+For the standard libc resolver DNS services must be provided on port 53 - there
+is no option for the resolver to consult other ports.
 
-iptables commands are issued to reroute localhost:53 to the minidns ports, so
-that it can transparently commandeer your local DNS.
+MiniDNS must therefore either run on udp port 53 (which means it must be
+started as root), or run on a high port and have some form of port-forwarding
+configured.
 
-This mechanism was chosen as the least intrusive way of doing this, in
-particular it makes no changes to the files in /etc.
+If you already have a nameservice running locally (which is not uncommon) then
+you may wish to use the port-forwarding features.
+
+The standard configuration for the libc resolver is in /etc/resolv.conf. This
+file will need to have only a single nameserver, 127.0.0.1, configured for
+MiniDNS to work. MiniDNS provides options to overwrite the configuration in
+resolv.conf as part of starting up. It will then replace the previous
+configuration when it is stopped.
+
+Finally MiniDNS requires "forwarders" - other servers that will answer
+recursive queries for domains for which MiniDNS is not authoritative.
+
+MiniDNS attempts to provide intelligent behaviour by default so that none of these things need to be configured manually, as follows:
+
+    1. on starting it will read /etc/resolv.conf. If this does not contain a 127.0.0.1 nameserver then it will read the nameservers and use them as forwarders, otherwise it will use the forwarders from the configuration file or 8.8.8.8 / 8.8.4.4 as fallbacks.
+    2. it will then attempt to bind to port 53 locally.
+    3. if it cannot bind to port 53, because it is in use or because MiniDNS was not started as root, then it will bind to port 5053 and trigger port-forwarding behaviour (as below)
+    4. if the resolv.conf file did not contain 127.0.0.1 then it is copied out to the temporary directory and the original rewritten to use 127.0.0.1
+
+port-forwarding:
+
+    1. if a "port-forward" configuration option is provided, then it is executed
+    2. otherwise, if the "iptables" program is available, then appropriate iptables incantations are used.
+    3. if neither of these options is available then the program will terminate with an error, and you will need to provide configuration
+
+You can force particular behaviour by setting the "forward" and "rewrite" configuration options:
+
+forward
+-------
+
+If this is "true" then the server will not attempt to bind to port 53. If this is "false" then the server will bail if it cannot bind to port 53.
+
+rewrite
+-------
+
+If rewrite is false then the server will not attempt to rewrite resolv.conf, but it will still start even if the resolv.conf file does not refer to 127.0.0.1. 
+
+Configuration file
+==================
+
+A configuration file is not required. Note that Google's DNS servers are used as fallback forwarders by default, as described above.
+
+If you wish, you can provide a file with the following format::
+
+    [minidns]
+    forwarders = 8.8.8.8 8.8.4.4
+    udp_port = 5053
+    www_port = 5080
+    pidfile = minidns.pid
+    logfile = minidns.log
+    domains = foo bar baz
+    savedir = ~/.minidns
+    port-forward = sudo iptables -tnat -A OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port 5053
+    port-unforward =  sudo iptables -tnat -D OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port 5053
+    forward = true
+    rewrite = true
+
+If any domains are listed then only those domains will be allowed
 
 API
 ===
@@ -210,24 +258,6 @@ Possible status code responses are:
 
  * *204* Success
  * *404* Domain or record not found
-
-Configuration file
-==================
-
-A configuration file is not required - sensible defaults are provided. Note that Google's DNS servers are used as forwarders by default.
-
-If you wish, you can provide a file with the following format::
-
-    [minidns]
-    forwarders = 8.8.8.8 8.8.4.4
-    udp_port = 5053
-    www_port = 5080
-    pidfile = minidns.pid
-    logfile = minidns.log
-    domains = foo bar baz
-    savedir = ~/.minidns
-
-If any domains are listed then only those domains will be allowed
 
 LICENSE
 =======
