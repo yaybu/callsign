@@ -98,7 +98,15 @@ port-forwarding:
     2. otherwise, if the "iptables" program is available, then appropriate iptables incantations are used.
     3. if neither of these options is available then the program will terminate with an error, and you will need to provide configuration
 
-You can force particular behaviour by setting the "forward" and "rewrite" configuration options:
+When the server is stopped it will:
+
+    1. put the resolv.conf file back as it was before, if it was rewritten
+    2. stop port-forwarding, either by using the port-unforward option or by using iptables, as appropriate
+
+Configuring behaviour
+---------------------
+
+You can force particular behaviours by setting the "forward" and "rewrite" configuration options:
 
 forward
 -------
