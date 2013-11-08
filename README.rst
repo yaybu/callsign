@@ -89,7 +89,7 @@ MiniDNS attempts to provide intelligent behaviour by default so that none of the
 
     1. on starting it will read /etc/resolv.conf. If this does not contain a 127.0.0.1 nameserver then it will read the nameservers and use them as forwarders, otherwise it will use the forwarders from the configuration file or 8.8.8.8 / 8.8.4.4 as fallbacks.
     2. it will then attempt to bind to port 53 locally.
-    3. if it cannot bind to port 53, because it is in use or because MiniDNS was not started as root, then it will bind to the port configured in the configuration file (or 5053 by default) and trigger port-forwarding behaviour (as below)
+    3. if it cannot bind to port 53 because it is in use then it will bind to the port configured in the configuration file (or 5053 by default) and trigger port-forwarding behaviour (as below)
     4. if the resolv.conf file did not contain 127.0.0.1 then it is copied to /etc/resolv.conf.minidns and the original rewritten to use 127.0.0.1
     5. resolv.conf is monitored for changes (your dhcp client might do this) and is automatically rewritten as required.
 
@@ -134,8 +134,8 @@ If you wish, you can provide a file with the following format::
     logfile = minidns.log
     domains = foo bar baz
     savedir = ~/.minidns
-    port-forward = sudo iptables -tnat -A OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port 5053
-    port-unforward =  sudo iptables -tnat -D OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port 5053
+    port-forward = iptables -tnat -A OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port 5053
+    port-unforward = iptables -tnat -D OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port 5053
     forward = true
     rewrite = true
 
