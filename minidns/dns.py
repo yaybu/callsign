@@ -29,8 +29,8 @@ import json
 
 class RuntimeAuthority(FileAuthority):
 
-    def __init__(self, domain, savedir):
-        self.savefile = os.path.join(savedir, domain)
+    def __init__(self, domain, savedir=None):
+        self.savefile = None if savedir is None else os.path.join(savedir, domain)
         ResolverBase.__init__(self)
         self._cache = {}
         self.records = {}
@@ -41,10 +41,11 @@ class RuntimeAuthority(FileAuthority):
             self.save()
 
     def save(self):
+        if self.savefile is None: return
         data = {}
         for name, value in self.records.items():
             if isinstance(value[0], Record_A):
-                data[name] = {
+                data[name.rstrip("."+self.domain)] = {
                     'type': 'A',
                     'value': value[0].dottedQuad(),
                     }
@@ -55,6 +56,7 @@ class RuntimeAuthority(FileAuthority):
         os.rename(self.savefile + ".tmp", self.savefile)
 
     def load(self):
+        if self.savefile is None: return
         if os.path.exists(self.savefile):
             data = json.load(open(self.savefile))
             for name, value in data.items():
