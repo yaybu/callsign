@@ -12,13 +12,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from twisted.scripts.twistd import run as twistd_run
-from twisted.python.util import sibpath
-import sys
 import os
-from subprocess import call, check_call
+import sys
 import optparse
-import requests
+
+from twisted.scripts import twistd
+from twisted.python.util import sibpath
 
 from minidns.config import config
 from minidns.client import MiniDNSClient
@@ -41,6 +40,18 @@ record commands:
     record [zone] del [host]        delete record
 
     e.g. record example.com a www 192.168.0.1"""
+
+
+def spawn(opts, conf):
+    """ Acts like twistd """
+    if opts.config is not None:
+        os.environ["MINIDNS_CONFIG_FILE"] = opts.config
+    sys.argv[1:] = [
+        "-oy", sibpath(__file__, "minidns.tac"),
+        "--pidfile", conf['pidfile'],
+        "--logfile", conf['logfile'],
+    ]
+    twistd.run()
 
 def run():
     parser = optparse.OptionParser(usage=usage)
@@ -66,7 +77,7 @@ def run():
     client = MiniDNSClient(opts, conf)
 
     if args[0] == "start":
-        client.start()
+        spawn(opts, conf)
     elif args[0] == "stop":
         client.stop()
     elif args[0] == "list":

@@ -2,7 +2,6 @@
 from twisted.python import util
 import os
 import sys
-from twisted.scripts import twistd
 import subprocess
 import requests
 
@@ -12,40 +11,7 @@ class MiniDNSClient:
         self.opts = opts
         self.conf = conf
 
-    def iptables_cmd(self, action, port):
-        command = [
-            "sudo", "iptables",
-            "-tnat",
-            action, "OUTPUT",
-            "-p", "udp",
-            "-d127.0.0.0/8",
-            "--dport", "53",
-            "-j", "REDIRECT",
-            "--to-port", str(port),
-        ]
-        rv = subprocess.call(command)
-
-    def iptables_divert(self):
-        self.iptables_cmd("-A", self.conf['udp_port'])
-
-    def iptables_undivert(self):
-        self.iptables_cmd("-D", self.conf['udp_port'])
-
-    def start(self):
-        if not self.opts.no_divert:
-            self.iptables_divert()
-        if self.opts.config is not None:
-            os.environ["MINIDNS_CONFIG_FILE"] = self.opts.config
-        sys.argv[1:] = [
-            "-oy", util.sibpath(__file__, "minidns.tac"),
-            "--pidfile", self.conf['pidfile'],
-            "--logfile", self.conf['logfile'],
-        ]
-        twistd.run()
-
     def stop(self):
-        if not self.opts.no_divert:
-            self.iptables_undivert()
         try:
             pid = int(open(self.conf['pidfile']).read())
         except IOError:
