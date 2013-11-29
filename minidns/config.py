@@ -26,7 +26,10 @@ def get_forwarders(resolv="resolv.conf"):
     if os.path.exists(resolv):
         for l in open(resolv):
             if l.startswith("nameserver"):
-                ns.append(l.strip().split(" ", 2)[1])
+                address = l.strip().split(" ", 2)[1]
+                # forwarding to ourselves would be bad
+                if not address.startswith("127"):
+                    ns.append(address)
     if not ns:
         ns = ['8.8.8.8', '8.8.4.4']
     return ns

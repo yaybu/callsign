@@ -9,6 +9,10 @@ nameserver 2.2.2.2
 search blah.com
 """
 
+r2 = """
+nameserver 127.0.1.1
+search blah.com
+"""
 class TestConfig(unittest.TestCase):
     
     def test_get_forwarders(self):
@@ -28,4 +32,9 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(ns, ["8.8.8.8", "8.8.4.4"])
         os.unlink("resolv.conf")
         
+    def test_get_forwarders_contains_localhost(self):
+        open("resolv.conf", "w").write(r2)
+        ns = get_forwarders("resolv.conf")
+        self.assertEqual(ns, ["8.8.8.8", "8.8.4.4"])
+        os.unlink("resolv.conf")
         
