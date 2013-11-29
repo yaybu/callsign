@@ -15,6 +15,7 @@
 import os
 import sys
 import optparse
+import pwd
 
 from twisted.scripts import twistd
 from twisted.python.util import sibpath
@@ -40,6 +41,7 @@ record commands:
     record [zone] del [host]        delete record
 
     e.g. record example.com a www 192.168.0.1"""
+
 
 
 def spawn(opts, conf):

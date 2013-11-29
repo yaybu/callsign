@@ -22,10 +22,15 @@ from twisted.names.common import ResolverBase
 from twisted.names.resolve import ResolverChain
 from twisted.names.dns import DNSDatagramProtocol, Record_A, Record_SOA
 from twisted.python import log
+from twisted.internet.error import CannotListenError
 
 from itertools import chain
 import os
 import json
+import subprocess
+import shlex
+import pwd
+from twisted.python.util import switchUID
 
 class RuntimeAuthority(FileAuthority):
 
@@ -167,16 +172,15 @@ class DNSService(service.MultiService):
 
     implements(service.IServiceCollection)
 
-    def __init__(self, config):
+    def __init__(self, conf):
         service.MultiService.__init__(self)
+        self.conf = conf
+        forwarders = self.conf['forwarders'].split()
+        savedir = self.conf['savedir']
+        self.port = self.conf['udp_port']        
         self.authorities = []
-        savedir = config.get("savedir")
-        self.factory = MiniDNSServerFactory(config['forwarders'].split(), savedir)
+        self.factory = MiniDNSServerFactory(forwarders, savedir)
         self.protocol = DNSDatagramProtocol(self.factory)
-        self.udpservice = internet.UDPServer(config['udp_port'], self.protocol)
-        self.services = [
-            self.udpservice,
-            ]
 
     def get_zone(self, name):
         return self.factory.get_zone(name)
@@ -186,3 +190,38 @@ class DNSService(service.MultiService):
 
     def zones(self):
         return self.factory.zones()
+
+    def startService(self):
+        import wingdbstub
+        udpservice = internet.UDPServer(53, self.protocol)
+        try:
+            udpservice.startService()
+            log.msg("Nameserver listening on port 53")
+        except CannotListenError:
+            log.msg("Nameserver cannot bind to port 53, trying %d" % self.port)
+            udpservice = internet.UDPServer(self.port, self.protocol)
+            udpservice.startService()
+            log.msg("Nameserver listening on port %d" % self.port)
+            self.port_forward()
+        self.services.append(udpservice)
+        self.drop_privileges()
+        
+    def drop_privileges(self):
+        ent = pwd.getpwnam(self.conf['user'])
+        switchUID(ent.pw_uid, ent.pw_gid)
+
+    def stopService(self):
+        service.MultiService.stopService(self)
+
+    def port_forward(self):
+        cmd = self.conf["port-forward"].format(port=self.conf['udp_port'])
+        rv = subprocess.call(shlex.split(cmd))
+        if rv != 0:
+            raise SystemExit("failed to execute %r" % cmd)
+
+    def port_unforward(self):
+        cmd = self.conf["port-unforward"].format(port=self.conf['udp_port'])
+        rv = subprocess.call(shlex.split(cmd))
+        if rv != 0:
+            raise SystemExit("failed to execute %r" % cmd)
+

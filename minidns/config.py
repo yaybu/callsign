@@ -15,7 +15,21 @@
 
 """ ConfigParser is a load of rubbish. """
 
+import os
 from ConfigParser import ConfigParser
+
+
+def get_forwarders(resolv="resolv.conf"):
+    """ Find the forwarders in /etc/resolv.conf, default to 8.8.8.8 and
+    8.8.4.4 """
+    ns = []
+    if os.path.exists(resolv):
+        for l in open(resolv):
+            if l.startswith("nameserver"):
+                ns.append(l.strip().split(" ", 2)[1])
+    if not ns:
+        ns = ['8.8.8.8', '8.8.4.4']
+    return ns
 
 defaults = {
     "pidfile": "minidns.pid",
@@ -23,11 +37,25 @@ defaults = {
     "udp_port": "5053",
     "www_port": "5080",
     "domains": "",
-    "forwarders": "8.8.8.8 8.8.4.4",
+    "forwarders": " ".join(get_forwarders()),
     "savedir": "~/.minidns",
+    "port-forward": "iptables -tnat -A OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}",
+    "port-unforward": "iptables -tnat -D OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}",
+    "forward": "true",
+    "rewrite": "true",
+    "user": "daemon",
 }
 
 int_fields = ["udp_port", "www_port"]
+bool_fields = ["forward", "rewrite"]
+
+def to_bool(x):
+    if x.lower() in ("true", "yes", "on", "1"):
+        return True
+    elif x.lower() in ("false", "no", "off", "0"):
+        return False
+    else:
+        raise ValueError("%r in config file is not boolean" % x)
 
 def config(pathname):
     if pathname is not None:
@@ -46,5 +74,7 @@ def config(pathname):
         d[name] = get(name, default)
         if name in int_fields:
             d[name] = int(d[name])
+        elif name in bool_fields:
+            d[name] = to_bool(d[name])
     return d
 

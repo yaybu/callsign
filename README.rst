@@ -71,10 +71,12 @@ is no option for the resolver to consult other ports.
 
 MiniDNS must therefore either run on udp port 53 (which means it must be
 started as root), or run on a high port and have some form of port-forwarding
-configured.
+configured (which also requires root).
 
 If you already have a nameservice running locally (which is not uncommon) then
-you may wish to use the port-forwarding features.
+you may wish to use the port-forwarding features.  This makes minidns as uninvasive as possible.
+
+Note that minidns drops privileges once ports are bound, it does not continue to run as root.
 
 The standard configuration for the libc resolver is in /etc/resolv.conf. This
 file will need to have only a single nameserver, 127.0.0.1, configured for
@@ -117,14 +119,14 @@ If this is "true" then the server will not attempt to bind to port 53. If this i
 rewrite
 -------
 
-If rewrite is false then the server will not attempt to rewrite resolv.conf, but it will still start even if the resolv.conf file does not refer to 127.0.0.1. 
+If rewrite is false then the server will not attempt to rewrite resolv.conf, but it will still start even if the resolv.conf file does not refer to 127.0.0.1.
 
 Configuration file
 ==================
 
 A configuration file is not required. Note that Google's DNS servers are used as fallback forwarders by default, as described above.
 
-If you wish, you can provide a file with the following format::
+If you wish, you can provide a file with the following format (defaults are shown)::
 
     [minidns]
     forwarders = 8.8.8.8 8.8.4.4
@@ -132,14 +134,19 @@ If you wish, you can provide a file with the following format::
     www_port = 5080
     pidfile = minidns.pid
     logfile = minidns.log
-    domains = foo bar baz
+    domains =
     savedir = ~/.minidns
-    port-forward = iptables -tnat -A OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port 5053
-    port-unforward = iptables -tnat -D OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port 5053
+    port-forward = iptables -tnat -A OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}
+    port-unforward = iptables -tnat -D OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}
     forward = true
     rewrite = true
+    user = daemon
 
-If any domains are listed then only those domains will be allowed
+If any domains are listed then only those domains will be allowed::
+
+    domains foo.com bar.com baz.com
+
+
 
 API
 ===
