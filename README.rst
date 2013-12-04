@@ -106,6 +106,21 @@ When the server is stopped it will:
     1. put the resolv.conf file back as it was before, if it was rewritten
     2. stop port-forwarding, either by using the port-unforward option or by using iptables, as appropriate
 
+
+resolv.conf file management
+---------------------------
+
+A small daemon is run as root by minidns that manages the resolv.conf file. It performs the following operations:
+
+On starting it:
+
+  1. copies /etc/resolv.conf to /etc/resolv.conf.minidns
+  2. writes a new /etc/resolv.conf that uses 127.0.0.1 as the nameserver
+  
+It then regularly checks the modification date on /etc/resolv.conf. If it is newer than the last change it made itself then it rewrites it again.
+
+On exit it copies the contents of /etc/resolv.conf.minidns into /etc/resolv.conf
+
 Configuring behaviour
 ---------------------
 

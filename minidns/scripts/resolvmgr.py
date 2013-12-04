@@ -22,6 +22,7 @@ import time
 
 timer = None
 timestamp = None
+monitor_pid = None
 
 def rewrite_resolvconf():
     # don't do atomic moves, because /etc/resolv.conf is quite possibly a symlink
@@ -42,6 +43,13 @@ def exit(*args, **kwargs):
         os.unlink("/etc/resolv.conf.minidns")
     
 def check():
+    if monitor_pid is not None:
+        try:
+            os.kill(monitor_pid, 0)
+        except OSError, e:
+            if e.errno == 3:
+                exit()
+                sys.exit(0)
     mtime = os.stat("/etc/resolv.conf")[stat.ST_MTIME]
     if mtime > timestamp:
         rewrite_resolvconf()
@@ -50,6 +58,10 @@ def check():
     timer.start()
     
 def run():
+    if len(sys.argv) > 1:
+        # this is the PID we monitor. when it dies, we die.
+        global monitor_pid 
+        monitor_pid = int(sys.argv[1])
     pid = os.fork()
     if pid < 0:
         sys.exit(1)

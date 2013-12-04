@@ -26,6 +26,7 @@ from twisted.internet.error import CannotListenError
 
 from itertools import chain
 import os
+import sys
 import json
 import subprocess
 import shlex
@@ -204,11 +205,18 @@ class DNSService(service.MultiService):
             log.msg("Nameserver listening on port %d" % self.port)
             self.port_forward()
         self.services.append(udpservice)
+        self.rewrite_and_monitor_resolvconf()
         self.drop_privileges()
         
     def drop_privileges(self):
         ent = pwd.getpwnam(self.conf['user'])
         switchUID(ent.pw_uid, ent.pw_gid)
+        
+    def rewrite_and_monitor_resolvconf(self):
+        """ If the only nameserver listed is 127.0.0.1, then we don't need to
+        rewrite resolv.conf. Otherwise we do some mad stuff. """
+        path = os.path.dirname(sys.argv[0])
+        subprocess.check_output([os.path.join(path, "resolvmgr"), str(os.getpid())])
 
     def stopService(self):
         service.MultiService.stopService(self)

@@ -18,7 +18,6 @@
 import os
 from ConfigParser import ConfigParser
 
-
 def get_forwarders(resolv="resolv.conf"):
     """ Find the forwarders in /etc/resolv.conf, default to 8.8.8.8 and
     8.8.4.4 """
