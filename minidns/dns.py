@@ -215,8 +215,8 @@ class DNSService(service.MultiService):
     def rewrite_and_monitor_resolvconf(self):
         """ If the only nameserver listed is 127.0.0.1, then we don't need to
         rewrite resolv.conf. Otherwise we do some mad stuff. """
-        path = os.path.dirname(sys.argv[0])
-        subprocess.check_output([os.path.join(path, "resolvmgr"), str(os.getpid())])
+        #path = os.path.dirname(sys.argv[0])
+        #subprocess.check_output([os.path.join(path, "resolvmgr"), str(os.getpid())])
 
     def stopService(self):
         service.MultiService.stopService(self)
