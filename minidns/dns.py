@@ -132,7 +132,7 @@ class MiniDNSResolverChain(ResolverChain):
 
 class MiniDNSServerFactory(DNSServerFactory):
 
-    def __init__(self, forwarders, savedir):
+    def __init__(self, forwarders, savedir, ent):
         self.canRecurse = True
         self.connections = []
         self.forwarders = forwarders
@@ -143,9 +143,10 @@ class MiniDNSServerFactory(DNSServerFactory):
             if not os.path.exists(self.savedir):
                 log.msg("Setting up save directory " + savedir)
                 os.mkdir(self.savedir)
+                os.chown(self.savedir, ent.pw_uid, ent.pw_gid)
         self.resolver = MiniDNSResolverChain([forward_resolver], self.savedir)
         self.verbose = False
-        self.load()
+        self.load() 
 
     def doStart(self):
         if not self.numPorts:
@@ -180,7 +181,7 @@ class DNSService(service.MultiService):
         savedir = self.conf['savedir']
         self.port = self.conf['udp_port']        
         self.authorities = []
-        self.factory = MiniDNSServerFactory(forwarders, savedir)
+        self.factory = MiniDNSServerFactory(forwarders, savedir, self.get_ent())
         self.protocol = DNSDatagramProtocol(self.factory)
 
     def get_zone(self, name):
@@ -207,6 +208,10 @@ class DNSService(service.MultiService):
         self.services.append(udpservice)
         self.rewrite_and_monitor_resolvconf()
         self.drop_privileges()
+       
+    def get_ent(self):
+        ent = pwd.getpwnam(self.conf['user'])
+        return ent      
         
     def drop_privileges(self):
         ent = pwd.getpwnam(self.conf['user'])
