@@ -78,6 +78,11 @@ you may wish to use the port-forwarding features.  This makes minidns as uninvas
 
 Note that minidns drops privileges once ports are bound, it does not continue to run as root.
 
+The user that minidns runs as (by default, 'minidns') must already exist on the system. If not installed
+by the package manager, run something like:
+
+    sudo useradd -r -s /bin/false minidns
+
 The standard configuration for the libc resolver is in /etc/resolv.conf. This
 file will need to have only a single nameserver, 127.0.0.1, configured for
 MiniDNS to work. MiniDNS provides options to overwrite the configuration in
@@ -147,15 +152,15 @@ If you wish, you can provide a file with the following format (defaults are show
     forwarders = 8.8.8.8 8.8.4.4
     udp_port = 5053
     www_port = 5080
-    pidfile = minidns.pid
-    logfile = minidns.log
+    pidfile = /var/run/minidns.pid
+    logfile = /var/log/minidns.log
     domains =
-    savedir = ~/.minidns
+    savedir = /var/lib/.minidns
     port-forward = iptables -tnat -A OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}
     port-unforward = iptables -tnat -D OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}
     forward = true
     rewrite = true
-    user = daemon
+    user = minidns
 
 If any domains are listed then only those domains will be allowed::
 

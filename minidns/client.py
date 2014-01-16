@@ -14,8 +14,13 @@ class MiniDNSClient:
     def stop(self):
         try:
             pid = int(open(self.conf['pidfile']).read())
-        except IOError:
-            print "minidns is not running"
+        except IOError,e:
+            if e.errno == 2:
+                print "minidns is not running"
+            elif e.errno == 13:
+                print "can't read pid, are you root?"
+            else:
+                print "pid file error"
             return 255
         try:
             os.kill(pid, 15)

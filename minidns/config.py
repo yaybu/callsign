@@ -34,18 +34,18 @@ def get_forwarders(resolv="resolv.conf"):
     return ns
 
 defaults = {
-    "pidfile": "minidns.pid",
-    "logfile": "minidns.log",
+    "pidfile": "/var/run/minidns.pid",
+    "logfile": "/var/log/minidns.log",
     "udp_port": "5053",
     "www_port": "5080",
     "domains": "",
     "forwarders": " ".join(get_forwarders()),
-    "savedir": "~/.minidns",
+    "savedir": "/var/lib/minidns",
     "port-forward": "iptables -tnat -A OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}",
     "port-unforward": "iptables -tnat -D OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}",
     "forward": "true",
     "rewrite": "true",
-    "user": "daemon",
+    "user": "minidns",
 }
 
 int_fields = ["udp_port", "www_port"]

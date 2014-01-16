@@ -41,14 +41,16 @@ class RuntimeAuthority(FileAuthority):
         self._cache = {}
         self.records = {}
         self.domain = domain
+        # TODO: deal with SOA record?
         self.load()
         if not self.records:
-            self.create_soa()
             self.save()
+        self.create_soa()
 
     def save(self):
         if self.savefile is None: return
         data = {}
+        # Maybe have each record type encode itself
         for name, value in self.records.items():
             if isinstance(value[0], Record_A):
                 data[name.rstrip("."+self.domain)] = {
@@ -70,7 +72,7 @@ class RuntimeAuthority(FileAuthority):
                     self.set_record(name, value['value'])
 
     def create_soa(self):
-        soa = Record_SOA(
+        soa_rec = Record_SOA(
             mname='localhost',
             rname='root.localhost',
             serial=1,
@@ -79,7 +81,12 @@ class RuntimeAuthority(FileAuthority):
             expire="1H",
             minimum="1"
         )
-        self.records[self.domain] = [soa]
+        # self.records[self.domain] = [soa]
+        # trying a nicer way - then doesn't matter if record has items
+        self.records.setdefault(self.domain.lower(), []).insert(0, soa_rec)
+        
+        # need this for super
+        self.soa=[self.domain.lower(), soa_rec]
 
     def set_record(self, name, value):
         print "Setting", name, "=", value
@@ -194,7 +201,6 @@ class DNSService(service.MultiService):
         return self.factory.zones()
 
     def startService(self):
-        import wingdbstub
         udpservice = internet.UDPServer(53, self.protocol)
         try:
             udpservice.startService()

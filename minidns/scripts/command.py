@@ -23,6 +23,12 @@ from twisted.python.util import sibpath
 from minidns.config import config
 from minidns.client import MiniDNSClient
 
+# Temp debug shim
+try:
+    import wingdbstub
+except ImportError:
+    pass
+
 usage = """%prog [options] command
 
 daemon control commands:
@@ -55,7 +61,7 @@ def spawn(opts, conf):
     ]
     twistd.run()
 
-def run():
+def run():    
     parser = optparse.OptionParser(usage=usage)
     parser.add_option("-c", "--config", help="path to configuration file")
     parser.add_option("-n", "--no-divert", action="store_true", help="Do not use iptables to divert port DNS locally")
