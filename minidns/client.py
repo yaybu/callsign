@@ -2,6 +2,7 @@
 from twisted.python import util
 import os
 import sys
+import shlex
 import subprocess
 import requests
 
@@ -23,6 +24,12 @@ class MiniDNSClient:
                 print "pid file error"
             return 255
         try:
+            # port-unforward here (copy of dns.port_unforward) for now
+            if self.conf["port-unforward"]:
+                cmd = self.conf["port-unforward"].format(port=self.conf['udp_port'])
+                rv = subprocess.call(shlex.split(cmd))
+                if rv != 0:
+                    print "Error: failed to execute %r" % cmd            
             os.kill(pid, 15)
             os.unlink(self.conf['pidfile'])
         except OSError:
