@@ -86,6 +86,7 @@ class MiniDNSClient:
         else:
             if response.text:
                 for line in response.text.split("\n"):
+                    # handle different records properly
                     type_, host, ip = line.split()
                     print host, type_, ip
             else:

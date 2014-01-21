@@ -40,7 +40,7 @@ class RecordResource(Resource):
             request.setResponseCode(400, message=self.err_wrong_record_type)
             return ""
         try:
-            self.zone.set_record(self.name, ip)
+            self.zone.set_record(self.name, ip, True)
         except socket.error:
             request.setResponseCode(400, message=self.err_malformed)
             return ""
@@ -58,6 +58,7 @@ class RecordResource(Resource):
 
     def render_GET(self, request):
         type_, ip = self.zone.get_record(self.name)
+        # do something more specific
         return "%s %s" % (type_, ip)
 
 class DomainResource(Resource):
@@ -69,9 +70,9 @@ class DomainResource(Resource):
 
     def render_GET(self, request):
         l = []
-        for type_, name, value in self.zone.a_records():
-            l.append("%s %s %s" % (type_, name, value))
-        return "\n".join(l)
+        for type_, name, values in self.zone.allrecords():
+            l.append("%s %s %s" % (type_, name, ' '.join(values)))
+        return "\n".join(l).encode("utf-8")
 
     def render_DELETE(self, request):
         self.dnsserver.delete_zone(self.zone.soa[0])

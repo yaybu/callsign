@@ -31,7 +31,16 @@ import json
 import subprocess
 import shlex
 import pwd
+
 from twisted.python.util import switchUID
+
+import mapper
+
+def _getsubdomain(name, domain):
+    domlen = len(domain)
+    if name[-domlen:] == domain:
+        return name[:-domlen].rstrip('.')
+    return name
 
 class RuntimeAuthority(FileAuthority):
 
@@ -43,20 +52,21 @@ class RuntimeAuthority(FileAuthority):
         self.domain = domain
         # TODO: deal with SOA record?
         self.load()
+        # do we need to save what we just loaded?
         if not self.records:
             self.save()
         self.create_soa()
 
     def save(self):
         if self.savefile is None: return
-        data = {}
-        # Maybe have each record type encode itself
-        for name, value in self.records.items():
-            if isinstance(value[0], Record_A):
-                data[name.rstrip("."+self.domain)] = {
-                    'type': 'A',
-                    'value': value[0].dottedQuad(),
-                    }
+        # needs to be list, as can have multiple As for same host/sub, e.g.
+        data = []
+        # record type encodes itself as in mapper
+        for name, rec in self.records.items():
+            str_rep = getstringrep(rec)
+            name = _getsubdomain(name, self.domain.lower())
+            if str_rep:
+                data.append({name, str_rep})
 
         f = open(self.savefile + ".tmp", "w")
         json.dump(data, f)
@@ -67,9 +77,9 @@ class RuntimeAuthority(FileAuthority):
         if self.savefile is None: return
         if os.path.exists(self.savefile):
             data = json.load(open(self.savefile))
-            for name, value in data.items():
-                if value['type'] == 'A':
-                    self.set_record(name, value['value'])
+            for item in data:
+                name, rec = item.items()[0] 
+                self.set_record(name, rec, False)
 
     def create_soa(self):
         soa_rec = Record_SOA(
@@ -81,17 +91,35 @@ class RuntimeAuthority(FileAuthority):
             expire="1H",
             minimum="1"
         )
+        # NOT SURE IF NEEDED - TRYING WITHOUT
         # self.records[self.domain] = [soa]
         # trying a nicer way - then doesn't matter if record has items
-        self.records.setdefault(self.domain.lower(), []).insert(0, soa_rec)
+        # self.records.setdefault(self.domain.lower(), []).insert(0, soa_rec)
         
         # need this for super
         self.soa=[self.domain.lower(), soa_rec]
+        
+    """
+    Convenience method for display of all records
+    """
+    def allrecords(self):
+        rec_details=[]
+        for name_rec in self.records.items():
+            log.msg(name_rec)
+            for record in name_rec[1]:
+                print record
+                rec_str = [val for val in mapper.getstringrep(record).values() if val is not None]    
+                rec_details.append((mapper.gettypestring(record), name_rec[0], rec_str))
+                log.msg("Retreived Record: %s %s %s" % rec_details[-1])
+        return rec_details
 
-    def set_record(self, name, value):
-        print "Setting", name, "=", value
-        self.records["%s.%s" % (name, self.domain)] = [Record_A(address=value)]
-        self.save()
+    def set_record(self, name, rec, do_save):
+        print "Setting", name, "=", rec
+        irecord = mapper.createrecord(rec)
+        full_name = ("%s.%s" % (name, self.domain)).lower()
+        self.records.setdefault(full_name,[]).append(irecord)
+        if do_save:
+            self.save()
 
     def get_record(self, name):
         r = self.records["%s.%s" % (name, self.domain)][0]
@@ -101,12 +129,6 @@ class RuntimeAuthority(FileAuthority):
     def delete_record(self, name):
         del self.records["%s.%s" % (name, self.domain)]
         self.save()
-
-    def a_records(self):
-        for k,v in self.records.items():
-            v = v[0]
-            if isinstance(v, Record_A):
-                yield ('A', k.rstrip(self.domain).rstrip("."), v.dottedQuad())
 
 class MiniDNSResolverChain(ResolverChain):
 
