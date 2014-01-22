@@ -14,47 +14,32 @@
 
 # should probably incorporate this all straight into dns.py
 
-import json
-from twisted.names.dns import QUERY_TYPES, IRecord, Record_A, Record_SOA, Record_CNAME
+from twisted.names.dns import (
+    QUERY_TYPES, IRecord, 
+    Record_A, Record_CNAME, Record_MX
+    )
 
-record_types = {}
-
-def gettypestring(record):
-    return QUERY_TYPES[record.TYPE]
-
-def getitems(record):
-    if 'type' in record and record['type'] in record_types:
-        valnames = record_types[record['type']].args
-        items = {}
-        for name in valnames:
-            if name in record:
-                items[name] = record[name]
-        return items
-    # more error handling?
-    return None
+record_types = {'A': Record_A, 'CNAME': Record_CNAME, 'MX': Record_MX}
     
-def getstringrep(record):
-    if hasattr(record, 'TYPE') and QUERY_TYPES[record.TYPE] in record_types:
-        rtype = QUERY_TYPES[record.TYPE]
-        return record_types[QUERY_TYPES[record.TYPE]].str_rep(record)
-    # more error handling?    
-    return None
+# Generic approach - should have done this earlier, IP seems to be only special case
 
-def createrecord(record):
-    items = getitems(record)
-    if items:
-        return record_types[record['type']].record_class(**items)
-    return None
+def get_typestring(rinstance):
+    return QUERY_TYPES[rinstance.TYPE]
 
-class MDRecord_A:
-    record_class = Record_A
-    args = ['address','ttl']
-    
-    @staticmethod
-    def str_rep(ra):
-        if isinstance(ra, Record_A):
-            return {'address': ra.dottedQuad(), 'ttl': ra.ttl}
-        return {}
-    
-record_types = {'A': MDRecord_A,}# 'SOA': MDRecord_SOA, 'CNAME': MDRecord_CNAME,}
+def get_values(rinstance):
+    return get_attrs(rinstance).values()
 
+def get_attrs(rinstance):
+    # create list of tupples of record attrs and values - using compareattributes
+    attrs = zip(rinstance.compareAttributes,
+                     map(lambda a: _getattrvalue(rinstance,a), 
+                         rinstance.compareAttributes))
+    # strip None values and return a dict
+    return dict([(k,v) for k,v in attrs if v is not None])
+
+# special case for IP address
+def _getattrvalue(rinstance, attr):
+    if attr == 'address':
+        return rinstance.dottedQuad()
+    else:
+        return getattr(rinstance, attr)    

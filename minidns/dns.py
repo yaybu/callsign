@@ -43,18 +43,17 @@ def _getsubdomain(name, domain):
     return name
 
 class RuntimeAuthority(FileAuthority):
-
+    
+    def check_type(self, type_):
+        return type_ in mapper.record_types
+    
     def __init__(self, domain, savedir=None):
         self.savefile = None if savedir is None else os.path.join(savedir, domain)
         ResolverBase.__init__(self)
         self._cache = {}
         self.records = {}
         self.domain = domain
-        # TODO: deal with SOA record?
         self.load()
-        # do we need to save what we just loaded?
-        if not self.records:
-            self.save()
         self.create_soa()
 
     def save(self):
@@ -62,24 +61,33 @@ class RuntimeAuthority(FileAuthority):
         # needs to be list, as can have multiple As for same host/sub, e.g.
         data = []
         # record type encodes itself as in mapper
-        for name, rec in self.records.items():
-            str_rep = getstringrep(rec)
+        for name, rec_items in self.records.items():
             name = _getsubdomain(name, self.domain.lower())
-            if str_rep:
-                data.append({name, str_rep})
-
-        f = open(self.savefile + ".tmp", "w")
-        json.dump(data, f)
-        f.close()
-        os.rename(self.savefile + ".tmp", self.savefile)
+            for irecord in rec_items:
+                type_ = mapper.get_typestring(irecord)
+                values = mapper.get_attrs(irecord)
+                values['type'] = type_
+                if values:
+                    data.append({name: values})
+        # only save if data exists
+        if data:
+            f = open(self.savefile + ".tmp", "w")
+            json.dump(data, f)
+            f.close()
+            os.rename(self.savefile + ".tmp", self.savefile)
 
     def load(self):
         if self.savefile is None: return
         if os.path.exists(self.savefile):
-            data = json.load(open(self.savefile))
-            for item in data:
-                name, rec = item.items()[0] 
-                self.set_record(name, rec, False)
+            try:
+                data = json.load(open(self.savefile))
+                for item in data:
+                    name, rec = item.items()[0]
+                    type_ = rec.pop('type')
+                    if name and rec:
+                        self.set_record(name, type_, rec, True)
+            except ValueError:
+                log.msg("No JSON in save file")
 
     def create_soa(self):
         soa_rec = Record_SOA(
@@ -91,40 +99,47 @@ class RuntimeAuthority(FileAuthority):
             expire="1H",
             minimum="1"
         )
-        # NOT SURE IF NEEDED - TRYING WITHOUT
-        # self.records[self.domain] = [soa]
-        # trying a nicer way - then doesn't matter if record has items
-        # self.records.setdefault(self.domain.lower(), []).insert(0, soa_rec)
-        
-        # need this for super
         self.soa=[self.domain.lower(), soa_rec]
-        
+
+    def set_record(self, name, type_, values, is_load):
+        print "Setting", name, "=", values
+        if type_ in mapper.record_types:
+            if is_load:
+                irecord = mapper.record_types[type_](**values)
+            else:
+                irecord = mapper.record_types[type_](*values)
+            full_name = ("%s.%s" % (name, self.domain)).lower()
+            self.records.setdefault(full_name,[]).append(irecord)
+            if not is_load:
+                self.save()
+        else:
+            log.msg("Invalid record type: %s" % type_)
+            
+    def get_record(self, name, record):
+        details = (mapper.get_typestring(record), 
+                   name, 
+                   mapper.get_values(record)
+                   )
+        log.msg("Retreived Record: %s %s %s" % details)
+        return details
+    
     """
     Convenience method for display of all records
     """
     def allrecords(self):
-        rec_details=[]
+        data=[]
         for name_rec in self.records.items():
-            log.msg(name_rec)
-            for record in name_rec[1]:
-                print record
-                rec_str = [val for val in mapper.getstringrep(record).values() if val is not None]    
-                rec_details.append((mapper.gettypestring(record), name_rec[0], rec_str))
-                log.msg("Retreived Record: %s %s %s" % rec_details[-1])
-        return rec_details
+            for r in name_rec[1]:
+                data.append(self.get_record(name_rec[0], r))
+        return data    
 
-    def set_record(self, name, rec, do_save):
-        print "Setting", name, "=", rec
-        irecord = mapper.createrecord(rec)
-        full_name = ("%s.%s" % (name, self.domain)).lower()
-        self.records.setdefault(full_name,[]).append(irecord)
-        if do_save:
-            self.save()
-
-    def get_record(self, name):
-        r = self.records["%s.%s" % (name, self.domain)][0]
-        if isinstance(r, Record_A):
-            return ('A', r.dottedQuad())
+    def get_records_by_name(self, name):
+        data = []
+        fullname = "%s.%s" % (name, self.domain)
+        if fullname in self.records:
+            for r in self.records[fullname]:
+                data.append(self.get_record(fullname, r))
+        return data
 
     def delete_record(self, name):
         del self.records["%s.%s" % (name, self.domain)]

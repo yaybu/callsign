@@ -86,9 +86,8 @@ class MiniDNSClient:
         else:
             if response.text:
                 for line in response.text.split("\n"):
-                    # handle different records properly
-                    type_, host, ip = line.split()
-                    print host, type_, ip
+                    type_, host, values = line.split()
+                    print host, type_, values
             else:
                 print "Zone %s is managed, but there are no records for it" % name
 

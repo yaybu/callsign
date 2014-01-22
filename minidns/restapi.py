@@ -21,7 +21,7 @@ import socket
 class RecordResource(Resource):
 
     err_invalid_body = 'Request body should be of the form "TYPE DATA"'
-    err_wrong_record_type = "Only A type records are supported"
+    err_wrong_record_type = "Record type %s is not supported"
     err_malformed = "Malformed IP Address"
 
     def __init__(self, name, zone):
@@ -32,15 +32,18 @@ class RecordResource(Resource):
     def render_PUT(self, request):
         data = request.content.read()
         try:
-            type_, ip = data.split()
+            [t, v] = data.split(None, 1)
+            type_ = t.upper()
+            values = v.split()
         except ValueError:
             request.setResponseCode(400, message=self.err_invalid_body)
             return ""
-        if type_ != 'A':
-            request.setResponseCode(400, message=self.err_wrong_record_type)
+        if not self.zone.check_type(type_):
+            msg = self.err_wrong_record_type % type_
+            request.setResponseCode(400, message=msg)
             return ""
         try:
-            self.zone.set_record(self.name, ip, True)
+            self.zone.set_record(self.name, type_, values, False)
         except socket.error:
             request.setResponseCode(400, message=self.err_malformed)
             return ""
@@ -57,9 +60,11 @@ class RecordResource(Resource):
         return ""
 
     def render_GET(self, request):
-        type_, ip = self.zone.get_record(self.name)
-        # do something more specific
-        return "%s %s" % (type_, ip)
+        results = self.zone.get_records_by_name(self.name)
+        if not results:
+            return "No Records found"
+        output = ["%s %s" % (type_, ' '.join(values)) for type_, _name, values in results]
+        return "\n".join(output).encode('utf-8')
 
 class DomainResource(Resource):
 
@@ -69,10 +74,11 @@ class DomainResource(Resource):
         self.dnsserver = dnsserver
 
     def render_GET(self, request):
-        l = []
-        for type_, name, values in self.zone.allrecords():
-            l.append("%s %s %s" % (type_, name, ' '.join(values)))
-        return "\n".join(l).encode("utf-8")
+        results = self.zone.allrecords()
+        if not results:
+            return "No Records found"        
+        output = ["%s %s %s" % (type_, name, ' '.join(values)) for type_, name, values in results] 
+        return "\n".join(output).encode("utf-8")
 
     def render_DELETE(self, request):
         self.dnsserver.delete_zone(self.zone.soa[0])
