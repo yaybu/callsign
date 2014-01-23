@@ -30,16 +30,19 @@ def get_values(rinstance):
     return get_attrs(rinstance).values()
 
 def get_attrs(rinstance):
-    # create list of tupples of record attrs and values - using compareattributes
+    # create list of tuples of record attrs and values - using compareattributes
     attrs = zip(rinstance.compareAttributes,
                      map(lambda a: _getattrvalue(rinstance,a), 
                          rinstance.compareAttributes))
     # strip None values and return a dict
-    return dict([(k,v) for k,v in attrs if v is not None])
+    return dict([(k,v) for k,v in attrs if v is not 'None'])
 
-# special case for IP address
+# special cases for IP address and TTL
 def _getattrvalue(rinstance, attr):
     if attr == 'address':
         return rinstance.dottedQuad()
+    if attr == 'ttl':
+        # why is there no canonical representation for this?
+        return str(getattr(rinstance, 'ttl'))
     else:
-        return getattr(rinstance, attr)    
+        return getattr(rinstance, attr)   

@@ -85,7 +85,7 @@ class RuntimeAuthority(FileAuthority):
                     name, rec = item.items()[0]
                     type_ = rec.pop('type')
                     if name and rec:
-                        self.set_record(name, type_, rec, True)
+                        self.set_record(name, type_, rec, False)
             except ValueError:
                 log.msg("No JSON in save file")
 
@@ -101,13 +101,13 @@ class RuntimeAuthority(FileAuthority):
         )
         self.soa=[self.domain.lower(), soa_rec]
 
-    def set_record(self, name, type_, values, is_load):
+    def set_record(self, name, type_, values, do_save):
         print "Setting", name, "=", values
         if type_ in mapper.record_types:
-            if is_load:
-                irecord = mapper.record_types[type_](**values)
-            else:
-                irecord = mapper.record_types[type_](*values)
+            # twisted str2time does not like u-strings
+            if 'ttl' in values:
+                values['ttl'] = values['ttl'].encode('utf-8')
+            irecord = mapper.record_types[type_](**values)
             full_name = ("%s.%s" % (name, self.domain)).lower()
             self.records.setdefault(full_name,[]).append(irecord)
             if not is_load:

@@ -105,12 +105,15 @@ def run():
         zone = args[1]
         command = args[2]
         host = args[3]
+        ttl = ""
         if command == "a":
-            if len(args) != 5:
+            if 4 > len(args) > 6:
                 parser.print_help()
                 return 255
-            data = args[4]
-            client.record_a(zone, host, data)
+            ip = args[4]
+            if len(args) == 6:
+                ttl = args[5]
+            client.record_a(zone, host, ip, ttl)
         elif command == "del":
             client.record_del(zone, host)
         else:

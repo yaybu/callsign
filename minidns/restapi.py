@@ -16,7 +16,9 @@ from zope.interface import implements
 from twisted.application import internet
 from twisted.web.server import Site
 from twisted.web.resource import Resource, NoResource
+from twisted.python import log
 import socket
+import json
 
 class RecordResource(Resource):
 
@@ -30,20 +32,17 @@ class RecordResource(Resource):
         self.zone = zone
 
     def render_PUT(self, request):
-        data = request.content.read()
         try:
-            [t, v] = data.split(None, 1)
-            type_ = t.upper()
-            values = v.split()
-        except ValueError:
+            type_ = request.data.pop('type')
+        except ValueError, KeyError:
             request.setResponseCode(400, message=self.err_invalid_body)
             return ""
         if not self.zone.check_type(type_):
             msg = self.err_wrong_record_type % type_
             request.setResponseCode(400, message=msg)
-            return ""
+            return "" 
         try:
-            self.zone.set_record(self.name, type_, values, False)
+            self.zone.set_record(self.name, type_, request.data, True)
         except socket.error:
             request.setResponseCode(400, message=self.err_malformed)
             return ""
@@ -75,6 +74,7 @@ class DomainResource(Resource):
 
     def render_GET(self, request):
         results = self.zone.allrecords()
+        log.msg('zone results: %s' % results)
         if not results:
             return "No Records found"        
         output = ["%s %s %s" % (type_, name, ' '.join(values)) for type_, name, values in results] 
@@ -86,8 +86,12 @@ class DomainResource(Resource):
         return ""
 
     def render_PUT(self, request):
-        request.setResponseCode(200)
-        return ""
+        data = json.loads(request.content.read())
+        name = data.keys()[0]
+        values = data.values()[0]
+        request.data = values
+        resource = self.getChild(name, request)
+        return resource.render_PUT(request)
 
     def getChild(self, path, request):
         return RecordResource(path, self.zone)

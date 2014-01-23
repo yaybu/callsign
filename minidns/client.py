@@ -5,6 +5,7 @@ import sys
 import shlex
 import subprocess
 import requests
+import json
 
 class MiniDNSClient:
 
@@ -86,13 +87,18 @@ class MiniDNSClient:
         else:
             if response.text:
                 for line in response.text.split("\n"):
-                    type_, host, values = line.split()
+                    type_, host, values = line.split(' ', 2)
                     print host, type_, values
             else:
                 print "Zone %s is managed, but there are no records for it" % name
 
-    def record_a(self, zone, host, data):
-        response = requests.put("%s/%s/%s" % (self.base_url, zone, host), data="A %s" % data)
+    def record_a(self, zone, host, ip, ttl):
+        url = "%s/%s" % (self.base_url, zone)
+        payload = {host: {'type': 'A', 'address': ip}}
+        if ttl:
+            payload[host]['ttl'] = ttl
+        headers = {'content-type': 'application/json'}
+        response = requests.put(url, data=json.dumps(payload), headers=headers)
         if response.status_code != 201:
             self.handle_error(response, {
                 404: "Error: Zone %r is not managed by minidns" % zone,
