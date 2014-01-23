@@ -42,6 +42,33 @@ def _getsubdomain(name, domain):
         return name[:-domlen].rstrip('.')
     return name
 
+def _is_record_valid(name, irecord, rec_list):
+    # maybe do other sanity checking here
+    if not rec_list:
+        return True
+    type_ = mapper.get_typestring(irecord)
+    # if current rec is CNAME or NS check for root name
+    if not name and type_ in ('CNAME', 'NS'):
+        return False
+    # if current rec is CNAME, can't clash
+    if rec_list and type_ == 'CNAME':
+        return False
+    # check for existing CNAME
+    sub_rec_list = [rec for rec in rec_list if mapper.get_typestring(rec) == 'CNAME']
+    if sub_rec_list:
+        return False
+    match_rec_list = [rec for rec in rec_list if rec.TYPE == irecord.TYPE]
+    # if matching records of same type, check TTL
+    if match_rec_list and match_rec_list[0].ttl != irecord.ttl:
+        return False
+    # if hostname matches, check that unique attrs differ
+    for rec in match_rec_list:
+        match_attr = mapper.unique_attr_map[type_]
+        if getattr(rec,match_attr) == getattr(irecord,match_attr):
+            return False
+    return True
+        
+
 class RuntimeAuthority(FileAuthority):
     
     def check_type(self, type_):
@@ -109,9 +136,13 @@ class RuntimeAuthority(FileAuthority):
                 values['ttl'] = values['ttl'].encode('utf-8')
             irecord = mapper.record_types[type_](**values)
             full_name = ("%s.%s" % (name, self.domain)).lower()
-            self.records.setdefault(full_name,[]).append(irecord)
-            if not is_load:
-                self.save()
+            
+            if _is_record_valid(name, irecord, self.records.get(full_name,[])):
+                self.records.setdefault(full_name,[]).append(irecord)
+                if do_save:
+                    self.save()
+            else:
+                log.msg("Constraint invalidated")
         else:
             log.msg("Invalid record type: %s" % type_)
             

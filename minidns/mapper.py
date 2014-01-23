@@ -20,7 +20,11 @@ from twisted.names.dns import (
     )
 
 record_types = {'A': Record_A, 'CNAME': Record_CNAME, 'MX': Record_MX}
-    
+
+# These record types can match hostnames if the specifed attr differs
+unique_attr_map = {'A': 'address', 'TXT': 'data', 'NS': 'name', 'MX': 'name'}
+
+
 # Generic approach - should have done this earlier, IP seems to be only special case
 
 def get_typestring(rinstance):
