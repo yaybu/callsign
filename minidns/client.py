@@ -67,7 +67,8 @@ class MiniDNSClient:
         response = requests.put("%s/%s" % (self.base_url, name))
         if response.status_code != 201:
             self.handle_error(response, {
-                200: "Domain already exists. Not changed.",
+                409: "Domain data already exists. Delete first.",
+                400: "Invalid request.",
                 403: "Forbidden: domain is not allowed."
             })
 

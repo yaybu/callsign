@@ -45,28 +45,28 @@ def _getsubdomain(name, domain):
 def _is_record_valid(name, irecord, rec_list):
     # maybe do other sanity checking here
     if not rec_list:
-        return True
+        return (True, "New hostname")
     type_ = mapper.get_typestring(irecord)
     # if current rec is CNAME or NS check for root name
     if not name and type_ in ('CNAME', 'NS'):
-        return False
+        return (False, "Root hostname not allowed in this zone")
     # if current rec is CNAME, can't clash
     if rec_list and type_ == 'CNAME':
-        return False
+        return (False, "CNAME can't use existing hostname")
     # check for existing CNAME
     sub_rec_list = [rec for rec in rec_list if mapper.get_typestring(rec) == 'CNAME']
     if sub_rec_list:
-        return False
+        return (False, "CNAME already exists with this hostname")
     match_rec_list = [rec for rec in rec_list if rec.TYPE == irecord.TYPE]
     # if matching records of same type, check TTL
     if match_rec_list and match_rec_list[0].ttl != irecord.ttl:
-        return False
+        return (False, "TTL is different from existing entry for this hostname")
     # if hostname matches, check that unique attrs differ
     for rec in match_rec_list:
         match_attr = mapper.unique_attr_map[type_]
         if getattr(rec,match_attr) == getattr(irecord,match_attr):
-            return False
-    return True
+            return (False, "% already exists for this host with same information" % type_)
+    return (True, "OK")
         
 
 class RuntimeAuthority(FileAuthority):
@@ -107,16 +107,24 @@ class RuntimeAuthority(FileAuthority):
         if self.savefile is None: return
         if os.path.exists(self.savefile):
             try:
+                # set dirty flag and re-save if invalid data in save file
+                dirty = False
                 data = json.load(open(self.savefile))
                 for item in data:
                     name, rec = item.items()[0]
                     type_ = rec.pop('type')
                     if name and rec:
-                        self.set_record(name, type_, rec, False)
+                        (success, msg) = self.set_record(name, type_, rec, False)
+                        log.msg(msg)
+                        if not success:
+                            dirty = True
+                if dirty:
+                    self.save()
             except ValueError:
                 log.msg("No JSON in save file")
 
     def create_soa(self):
+        # Maybe allow these to be changed?
         soa_rec = Record_SOA(
             mname='localhost',
             rname='root.localhost',
@@ -129,24 +137,33 @@ class RuntimeAuthority(FileAuthority):
         self.soa=[self.domain.lower(), soa_rec]
 
     def set_record(self, name, type_, values, do_save):
-        print "Setting", name, "=", values
         if type_ in mapper.record_types:
             # twisted str2time does not like u-strings
             if 'ttl' in values:
-                values['ttl'] = values['ttl'].encode('utf-8')
+                if values['ttl'] == 'None':
+                    values.pop('ttl')
+                else:
+                    values['ttl'] = values['ttl'].encode('utf-8')
+            print "Setting", name, "=", values
             irecord = mapper.record_types[type_](**values)
             full_name = ("%s.%s" % (name, self.domain)).lower()
             
-            if _is_record_valid(name, irecord, self.records.get(full_name,[])):
+            (is_valid, status) = _is_record_valid(name, irecord, self.records.get(full_name,[]))
+            
+            if is_valid:
                 self.records.setdefault(full_name,[]).append(irecord)
                 if do_save:
                     self.save()
+                    
+                return (True, "Record Added")
             else:
                 log.msg("Constraint invalidated")
+                return (False, status) 
         else:
             log.msg("Invalid record type: %s" % type_)
+            return (False, "Record not supported")
             
-    def get_record(self, name, record):
+    def get_record_details(self, name, record):
         details = (mapper.get_typestring(record), 
                    name, 
                    mapper.get_values(record)
@@ -161,7 +178,7 @@ class RuntimeAuthority(FileAuthority):
         data=[]
         for name_rec in self.records.items():
             for r in name_rec[1]:
-                data.append(self.get_record(name_rec[0], r))
+                data.append(self.get_record_details(name_rec[0], r))
         return data    
 
     def get_records_by_name(self, name):
@@ -169,7 +186,7 @@ class RuntimeAuthority(FileAuthority):
         fullname = "%s.%s" % (name, self.domain)
         if fullname in self.records:
             for r in self.records[fullname]:
-                data.append(self.get_record(fullname, r))
+                data.append(self.get_record_details(fullname, r))
         return data
 
     def delete_record(self, name):
@@ -193,7 +210,12 @@ class MiniDNSResolverChain(ResolverChain):
 
     def delete_zone(self, name):
         print "Deleting zone", name
-        del self.authorities[name]
+        if name in self.authorities:
+            # do we want to nuke save zone info at this point?
+            savefile = self.authorities[name].savefile
+            if savefile and os.path.exists(savefile):
+                os.remove(savefile)
+            del self.authorities[name]
 
     def add_zone(self, name):
         if name not in self.authorities:

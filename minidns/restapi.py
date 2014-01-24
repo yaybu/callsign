@@ -25,6 +25,7 @@ class RecordResource(Resource):
     err_invalid_body = 'Request body should be of the form "TYPE DATA"'
     err_wrong_record_type = "Record type %s is not supported"
     err_malformed = "Malformed IP Address"
+    err_invalid_details = "Record data is not valid: %s"
 
     def __init__(self, name, zone):
         Resource.__init__(self)
@@ -42,11 +43,15 @@ class RecordResource(Resource):
             request.setResponseCode(400, message=msg)
             return "" 
         try:
-            self.zone.set_record(self.name, type_, request.data, True)
+            (success, msg) = self.zone.set_record(self.name, type_, request.data, True)
+            if success:
+                request.setResponseCode(201)
+            else:
+                msg = self.err_invalid_details % msg
+                request.setResponseCode(400, message=msg)
         except socket.error:
             request.setResponseCode(400, message=self.err_malformed)
             return ""
-        request.setResponseCode(201)
         return ""
 
     def render_DELETE(self, request):
@@ -86,12 +91,19 @@ class DomainResource(Resource):
         return ""
 
     def render_PUT(self, request):
-        data = json.loads(request.content.read())
-        name = data.keys()[0]
-        values = data.values()[0]
-        request.data = values
-        resource = self.getChild(name, request)
-        return resource.render_PUT(request)
+        raw_data = request.content.read()
+        if raw_data == "":
+            request.setResponseCode(409, message="Domain already exists, delete first")
+            return ""
+        try:
+            data = json.loads(raw_data)
+            name = data.keys()[0]
+            values = data.values()[0]
+            request.data = values
+            resource = self.getChild(name, request)
+            return resource.render_PUT(request)
+        except ValueError:
+            request.setResponseCode(400)
 
     def getChild(self, path, request):
         return RecordResource(path, self.zone)
@@ -152,6 +164,7 @@ class RootResource(Resource):
             zone = self.dnsserver.get_zone(path)
             return DomainResource(zone, self.dnsserver)
         except KeyError:
+            # could refactor this - is a bit redundant
             if self.allowed_domain(path):
                 resource_type = MissingDomainResource
             else:
