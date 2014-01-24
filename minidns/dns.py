@@ -42,6 +42,7 @@ def _getsubdomain(name, domain):
         return name[:-domlen].rstrip('.')
     return name
 
+# Need to cope with default TTL - seems to be an issue when not set
 def _is_record_valid(name, irecord, rec_list):
     # maybe do other sanity checking here
     if not rec_list:
@@ -61,14 +62,14 @@ def _is_record_valid(name, irecord, rec_list):
     # if matching records of same type, check TTL
     if match_rec_list and match_rec_list[0].ttl != irecord.ttl:
         return (False, "TTL is different from existing entry for this hostname")
+    log.msg("checking for uniqueness")
     # if hostname matches, check that unique attrs differ
     for rec in match_rec_list:
         match_attr = mapper.unique_attr_map[type_]
         if getattr(rec,match_attr) == getattr(irecord,match_attr):
-            return (False, "% already exists for this host with same information" % type_)
+            return (False, "%s already exists for this host with same information" % type_)
     return (True, "OK")
         
-
 class RuntimeAuthority(FileAuthority):
     
     def check_type(self, type_):
@@ -144,17 +145,26 @@ class RuntimeAuthority(FileAuthority):
                     values.pop('ttl')
                 else:
                     values['ttl'] = values['ttl'].encode('utf-8')
-            print "Setting", name, "=", values
-            irecord = mapper.record_types[type_](**values)
-            full_name = ("%s.%s" % (name, self.domain)).lower()
             
+            print "Setting", name, "=", values
+            
+            # have to special case data type for txt records, grrr
+            if 'data' in values:
+                data = values.pop('data')
+                irecord = mapper.record_types[type_](*data,**values)
+            else:
+                irecord = mapper.record_types[type_](**values)
+            
+            full_name = ("%s.%s" % (name, self.domain)).lower()
+            log.msg("testing validity")
             (is_valid, status) = _is_record_valid(name, irecord, self.records.get(full_name,[]))
+            
+            log.msg(status)
             
             if is_valid:
                 self.records.setdefault(full_name,[]).append(irecord)
                 if do_save:
                     self.save()
-                    
                 return (True, "Record Added")
             else:
                 log.msg("Constraint invalidated")

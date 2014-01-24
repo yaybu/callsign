@@ -106,14 +106,33 @@ def run():
         command = args[2]
         host = args[3]
         ttl = ""
+        # probably should refactor out commonalities
         if command == "a":
-            if 4 > len(args) > 6:
+            if len(args) < 5 or len(args) > 6:
                 parser.print_help()
                 return 255
             ip = args[4]
             if len(args) == 6:
                 ttl = args[5]
             client.record_a(zone, host, ip, ttl)
+        # simple records
+        elif command in ("cname", "ns"):
+            if len(args) < 5 or len(args) > 6:
+                parser.print_help()
+                return 255
+            name = args[4]
+            if len(args) == 6:
+                ttl = args[5]
+            type_ = command.upper()
+            client.record_simple(zone, type_, host, name, ttl)
+        elif command == "txt":
+            if len(args) < 5 or len(args) > 6:
+                parser.print_help()
+                return 255
+            data = args[4]
+            if len(args) == 6:
+                ttl = args[5]
+            client.record_txt(zone, host, data, ttl)            
         elif command == "del":
             client.record_del(zone, host)
         else:

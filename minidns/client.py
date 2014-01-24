@@ -93,6 +93,7 @@ class MiniDNSClient:
             else:
                 print "Zone %s is managed, but there are no records for it" % name
 
+    # Probably should refactor to be generic like in dns.py
     def record_a(self, zone, host, ip, ttl):
         url = "%s/%s" % (self.base_url, zone)
         payload = {host: {'type': 'A', 'address': ip}}
@@ -105,6 +106,32 @@ class MiniDNSClient:
                 404: "Error: Zone %r is not managed by minidns" % zone,
                 400: response.reason
                 })
+            
+    def record_txt(self, zone, host, data, ttl):
+        url = "%s/%s" % (self.base_url, zone)
+        payload = {host: {'type': 'TXT', 'data': [data]}}
+        if ttl:
+            payload[host]['ttl'] = ttl
+        headers = {'content-type': 'application/json'}
+        response = requests.put(url, data=json.dumps(payload), headers=headers)
+        if response.status_code != 201:
+            self.handle_error(response, {
+                404: "Error: Zone %r is not managed by minidns" % zone,
+                400: response.reason
+                })    
+            
+    def record_simple(self, zone, type_, host, name, ttl):
+        url = "%s/%s" % (self.base_url, zone)
+        payload = {host: {'type': type_, 'name': name}}
+        if ttl:
+            payload[host]['ttl'] = ttl
+        headers = {'content-type': 'application/json'}
+        response = requests.put(url, data=json.dumps(payload), headers=headers)
+        if response.status_code != 201:
+            self.handle_error(response, {
+                404: "Error: Zone %r is not managed by minidns" % zone,
+                400: response.reason
+                })        
 
     def record_del(self, zone, host):
         response = requests.delete("%s/%s/%s" % (self.base_url, zone, host))

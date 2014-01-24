@@ -16,17 +16,15 @@
 
 from twisted.names.dns import (
     QUERY_TYPES, IRecord, 
-    Record_A, Record_CNAME, Record_MX
+    Record_A, Record_CNAME, Record_MX, Record_TXT, Record_NS
     )
 
-record_types = {'A': Record_A, 'CNAME': Record_CNAME, 'MX': Record_MX}
+record_types = {'A': Record_A, 'CNAME': Record_CNAME, 'TXT': Record_TXT, 'NS': Record_NS, 'MX': Record_MX}
 
 # These record types can match hostnames if the specifed attr differs
-unique_attr_map = {'A': 'address', 'TXT': 'data', 'NS': 'name', 'MX': 'name'}
+unique_attr_map = {'A': 'address', 'CNAME': 'name', 'TXT': 'data', 'NS': 'name', 'MX': 'name'}
 
-
-# Generic approach - should have done this earlier, IP seems to be only special case
-
+# Generic approach
 def get_typestring(rinstance):
     return QUERY_TYPES[rinstance.TYPE]
 
@@ -41,12 +39,11 @@ def get_attrs(rinstance):
     # strip None values and return a dict
     return dict([(k,v) for k,v in attrs if v is not 'None'])
 
-# special cases for IP address and TTL
+# special case IP and text data - is there a canonical representation for TTL?
 def _getattrvalue(rinstance, attr):
     if attr == 'address':
         return rinstance.dottedQuad()
-    if attr == 'ttl':
-        # why is there no canonical representation for this?
-        return str(getattr(rinstance, 'ttl'))
+    if attr == 'data':
+        return getattr(rinstance, 'data')
     else:
-        return getattr(rinstance, attr)   
+        return str(getattr(rinstance, attr))
