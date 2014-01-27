@@ -37,7 +37,7 @@ def get_attrs(rinstance):
                      map(lambda a: _getattrvalue(rinstance,a), 
                          rinstance.compareAttributes))
     # strip None values and return a dict
-    return dict([(k,v) for k,v in attrs if v is not 'None'])
+    return dict([(k,v) for k,v in attrs if v != 'None'])
 
 # special case IP and text data - is there a canonical representation for TTL?
 def _getattrvalue(rinstance, attr):

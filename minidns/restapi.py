@@ -19,6 +19,15 @@ from twisted.web.resource import Resource, NoResource
 from twisted.python import log
 import socket
 import json
+import collections
+
+def flatten_values(vals):
+    for val in vals:
+        if isinstance(val, collections.Iterable) and not isinstance(val, basestring):
+            for sub in flatten_values(val):
+                yield sub
+        else:
+            yield "\'%s\'" % val
 
 class RecordResource(Resource):
 
@@ -67,7 +76,8 @@ class RecordResource(Resource):
         results = self.zone.get_records_by_name(self.name)
         if not results:
             return "No Records found"
-        output = ["%s %s" % (type_, ' '.join(values)) for type_, _name, values in results]
+        log.msg("Results for %s: %s" % (name, results))
+        output = ["%s %s" % (type_, ' '.join(list(flatten_values(values)))) for type_, _name, values in results]
         return "\n".join(output).encode('utf-8')
 
 class DomainResource(Resource):
@@ -79,10 +89,10 @@ class DomainResource(Resource):
 
     def render_GET(self, request):
         results = self.zone.allrecords()
-        log.msg('zone results: %s' % results)
+        log.msg('Zone results: %s' % results)
         if not results:
             return "No Records found"        
-        output = ["%s %s %s" % (type_, name, ' '.join(values)) for type_, name, values in results] 
+        output = ["%s %s %s" % (name, type_, ' '.join(list(flatten_values(values)))) for type_, name, values in results]
         return "\n".join(output).encode("utf-8")
 
     def render_DELETE(self, request):
