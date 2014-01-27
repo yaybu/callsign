@@ -25,9 +25,9 @@ def flatten_values(vals):
     for val in vals:
         if isinstance(val, collections.Iterable) and not isinstance(val, basestring):
             for sub in flatten_values(val):
-                yield sub
+                yield "\'%s\'" % sub
         else:
-            yield "\'%s\'" % val
+            yield val
 
 class RecordResource(Resource):
 
@@ -76,7 +76,7 @@ class RecordResource(Resource):
         results = self.zone.get_records_by_name(self.name)
         if not results:
             return "No Records found"
-        log.msg("Results for %s: %s" % (name, results))
+        log.msg("Results for %s: %s" % (self.name, results))
         output = ["%s %s" % (type_, ' '.join(list(flatten_values(values)))) for type_, _name, values in results]
         return "\n".join(output).encode('utf-8')
 
