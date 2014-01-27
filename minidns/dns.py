@@ -146,7 +146,7 @@ class RuntimeAuthority(FileAuthority):
                 else:
                     values['ttl'] = values['ttl'].encode('utf-8')
             
-            print "Setting", name, "=", values
+            log.msg("Setting %s = %s" % (name, values))
             
             # have to special case data type for txt records, grrr
             if 'data' in values:
@@ -198,6 +198,12 @@ class RuntimeAuthority(FileAuthority):
             for r in self.records[fullname]:
                 data.append(self.get_record_details(fullname, r))
         return data
+    
+    def get_records_by_type(self, type_):
+        data = []
+        for k,v in self.records.items():
+            data.extend([self.get_record_details(k, item) for item in v if mapper.get_typestring(item)== type_])
+        return data     
 
     def delete_record(self, name):
         del self.records["%s.%s" % (name, self.domain)]
@@ -252,7 +258,7 @@ class MiniDNSServerFactory(DNSServerFactory):
                 os.mkdir(self.savedir)
                 os.chown(self.savedir, ent.pw_uid, ent.pw_gid)
         self.resolver = MiniDNSResolverChain([forward_resolver], self.savedir)
-        self.verbose = False
+        self.verbose = True
         self.load() 
 
     def doStart(self):
