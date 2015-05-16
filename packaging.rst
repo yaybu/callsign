@@ -17,3 +17,8 @@ rename the script in setup.py
 build it with debuild
 install it
 
+now for the panel applet stuff.
+
+http://www.lshift.net/blog/2012/02/29/making-panel-applets-for-gnome-2-and-3/
+
+
