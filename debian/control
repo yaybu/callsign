@@ -1,0 +1,36 @@
+Source: minidns
+Maintainer: Doug Winter <doug.winter@isotoma.com>
+Section: python
+Priority: optional
+Build-Depends: python-setuptools (>= 0.6b3), python (>= 2.6.6-3), debhelper (>= 7.4.3)
+Standards-Version: 3.9.1
+
+
+
+Package: minidns
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Description: Simple DNS Server with REST API, for localhost only
+ =======
+ minidns
+ =======
+ .
+ :Date: 2013-09-11
+ :Author: Doug Winter <doug.winter@isotoma.com>
+ :Website: http://github.com/yaybu/minidns
+ .
+ Description
+ ===========
+ .
+ MiniDNS is a DNS server for developers. It is intended to serve DNS only for a
+ single machine - your desktop. It will support automated deployment systems
+ that coordinate with DNS services, for example Yaybu.
+ .
+ Desktops vary in their client DNS configuration quite widely, and MiniDNS
+ supports a number of different modes to enable it to service your DNS effectively.
+ .
+ The DNS service provides recursive queries, so you can continue to use DNS as usual.
+ .
+
+
+
