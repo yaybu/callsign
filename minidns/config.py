@@ -41,8 +41,6 @@ defaults = {
     "domains": "",
     "forwarders": " ".join(get_forwarders()),
     "savedir": "/var/lib/minidns",
-    "port-forward": "iptables -tnat -A OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}",
-    "port-unforward": "iptables -tnat -D OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}",
     "forward": "true",
     "rewrite": "true",
     "user": "minidns",
