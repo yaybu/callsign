@@ -1,0 +1,1 @@
+adduser --system minidns --ingroup daemon --no-create-home --home /var/run/minidns

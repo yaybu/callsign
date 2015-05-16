@@ -17,23 +17,10 @@ import sys
 import optparse
 import pwd
 
-from twisted.scripts import twistd
-from twisted.python.util import sibpath
-
 from minidns.config import config
 from minidns.client import MiniDNSClient
 
-# Temp debug shim
-try:
-    import wingdbstub
-except ImportError:
-    pass
-
 usage = """%prog [options] command
-
-daemon control commands:
-    start  start the minidns server and forward localhost:53 to it
-    stop   stop the minidns server and remove iptables rules
 
 zone commands:
     list      list all authoritative zones
@@ -50,21 +37,9 @@ record commands:
 
 
 
-def spawn(opts, conf):
-    """ Acts like twistd """
-    if opts.config is not None:
-        os.environ["MINIDNS_CONFIG_FILE"] = opts.config
-    sys.argv[1:] = [
-        "-oy", sibpath(__file__, "minidns.tac"),
-        "--pidfile", conf['pidfile'],
-        "--logfile", conf['logfile'],
-    ]
-    twistd.run()
-
 def run():    
     parser = optparse.OptionParser(usage=usage)
     parser.add_option("-c", "--config", help="path to configuration file")
-    parser.add_option("-n", "--no-divert", action="store_true", help="Do not use iptables to divert port DNS locally")
     opts, args = parser.parse_args()
 
     if len(args) == 0:
@@ -84,11 +59,7 @@ def run():
     conf = config(opts.config)
     client = MiniDNSClient(opts, conf)
 
-    if args[0] == "start":
-        spawn(opts, conf)
-    elif args[0] == "stop":
-        client.stop()
-    elif args[0] == "list":
+    if args[0] == "list":
         client.zone_list()
     elif args[0] == "purge":
         client.zone_purge()

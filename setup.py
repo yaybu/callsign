@@ -47,9 +47,7 @@ setup(
     entry_points = {
         "console_scripts": [
             "minidnscmd=minidns.scripts.command:run",
-            "resolvmgr=minidns.scripts.resolvmgr:run"
+            "minidns-daemon=minidns.scripts.daemon:run",
         ]
     }
 )
-
-
