@@ -36,7 +36,7 @@ def get_forwarders(resolv="resolv.conf"):
 defaults = {
     "pidfile": "/var/run/minidns.pid",
     "logfile": "/var/log/minidns.log",
-    "udp_port": "5053",
+    "udp_port": "53",
     "www_port": "5080",
     "domains": "",
     "forwarders": " ".join(get_forwarders()),

@@ -69,14 +69,8 @@ Modes of operation
 For the standard libc resolver DNS services must be provided on port 53 - there
 is no option for the resolver to consult other ports.
 
-MiniDNS must therefore either run on udp port 53 (which means it must be
-started as root), or run on a high port and have some form of port-forwarding
-configured (which also requires root).
-
-If you already have a nameservice running locally (which is not uncommon) then
-you may wish to use the port-forwarding features.  This makes minidns as uninvasive as possible.
-
 Note that minidns drops privileges once ports are bound, it does not continue to run as root.
+configured (which also requires root).
 
 The user that minidns runs as (by default, 'minidns') must already exist on the system. If not installed
 by the package manager, run something like:
@@ -92,39 +86,6 @@ configuration when it is stopped.
 Finally MiniDNS requires "forwarders" - other servers that will answer
 recursive queries for domains for which MiniDNS is not authoritative.
 
-MiniDNS attempts to provide intelligent behaviour by default so that none of these things need to be configured manually, as follows:
-
-    1. on starting it will read /etc/resolv.conf. If this does not contain a 127.0.0.1 nameserver then it will read the nameservers and use them as forwarders, otherwise it will use the forwarders from the configuration file or 8.8.8.8 / 8.8.4.4 as fallbacks.
-    2. it will then attempt to bind to port 53 locally.
-    3. if it cannot bind to port 53 because it is in use then it will bind to the port configured in the configuration file (or 5053 by default) and trigger port-forwarding behaviour (as below)
-    4. if the resolv.conf file did not contain 127.0.0.1 then it is copied to /etc/resolv.conf.minidns and the original rewritten to use 127.0.0.1
-    5. resolv.conf is monitored for changes (your dhcp client might do this) and is automatically rewritten as required.
-
-port-forwarding:
-
-    1. if a "port-forward" configuration option is provided, then it is executed
-    2. otherwise, if the "iptables" program is available, then appropriate iptables incantations are used.
-    3. if neither of these options is available then the program will terminate with an error, and you will need to provide configuration
-
-When the server is stopped it will:
-
-    1. put the resolv.conf file back as it was before, if it was rewritten
-    2. stop port-forwarding, either by using the port-unforward option or by using iptables, as appropriate
-
-
-resolv.conf file management
----------------------------
-
-A small daemon is run as root by minidns that manages the resolv.conf file. It performs the following operations:
-
-On starting it:
-
-  1. copies /etc/resolv.conf to /etc/resolv.conf.minidns
-  2. writes a new /etc/resolv.conf that uses 127.0.0.1 as the nameserver
-  
-It then regularly checks the modification date on /etc/resolv.conf. If it is newer than the last change it made itself then it rewrites it again.
-
-On exit it copies the contents of /etc/resolv.conf.minidns into /etc/resolv.conf
 
 Configuring behaviour
 ---------------------
@@ -150,14 +111,12 @@ If you wish, you can provide a file with the following format (defaults are show
 
     [minidns]
     forwarders = 8.8.8.8 8.8.4.4
-    udp_port = 5053
+    udp_port = 53
     www_port = 5080
     pidfile = /var/run/minidns.pid
     logfile = /var/log/minidns.log
     domains =
     savedir = /var/lib/.minidns
-    port-forward = iptables -tnat -A OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}
-    port-unforward = iptables -tnat -D OUTPUT -p udp -d127.0.0.1/8 --dport 53 -j REDIRECT --to-port {port}
     forward = true
     rewrite = true
     user = minidns
