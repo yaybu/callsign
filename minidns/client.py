@@ -13,29 +13,6 @@ class MiniDNSClient:
         self.opts = opts
         self.conf = conf
 
-    def stop(self):
-        try:
-            pid = int(open(self.conf['pidfile']).read())
-        except IOError,e:
-            if e.errno == 2:
-                print "minidns is not running"
-            elif e.errno == 13:
-                print "can't read pid, are you root?"
-            else:
-                print "pid file error"
-            return 255
-        try:
-            # port-unforward here (copy of dns.port_unforward) for now
-            if self.conf["port-unforward"]:
-                cmd = self.conf["port-unforward"].format(port=self.conf['udp_port'])
-                rv = subprocess.call(shlex.split(cmd))
-                if rv != 0:
-                    print "Error: failed to execute %r" % cmd            
-            os.kill(pid, 15)
-            os.unlink(self.conf['pidfile'])
-        except OSError:
-            print "minidns is not running"
-
     @property
     def base_url(self):
         return "http://localhost:%s" % self.conf['www_port']

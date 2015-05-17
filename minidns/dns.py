@@ -69,12 +69,12 @@ def _is_record_valid(name, irecord, rec_list):
         if getattr(rec,match_attr) == getattr(irecord,match_attr):
             return (False, "%s already exists for this host with same information" % type_)
     return (True, "OK")
-        
+
 class RuntimeAuthority(FileAuthority):
-    
+
     def check_type(self, type_):
         return type_ in mapper.record_types
-    
+
     def __init__(self, domain, savedir=None):
         self.savefile = None if savedir is None else os.path.join(savedir, domain)
         ResolverBase.__init__(self)
@@ -145,22 +145,22 @@ class RuntimeAuthority(FileAuthority):
                     values.pop('ttl')
                 else:
                     values['ttl'] = values['ttl'].encode('utf-8')
-            
+
             log.msg("Setting %s = %s" % (name, values))
-            
+
             # have to special case data type for txt records, grrr
             if 'data' in values:
                 data = values.pop('data')
                 irecord = mapper.record_types[type_](*data,**values)
             else:
                 irecord = mapper.record_types[type_](**values)
-            
+
             full_name = ("%s.%s" % (name, self.domain)).lower()
             log.msg("testing validity")
             (is_valid, status) = _is_record_valid(name, irecord, self.records.get(full_name,[]))
-            
+
             log.msg(status)
-            
+
             if is_valid:
                 self.records.setdefault(full_name,[]).append(irecord)
                 if do_save:
@@ -168,19 +168,19 @@ class RuntimeAuthority(FileAuthority):
                 return (True, "Record Added")
             else:
                 log.msg("Constraint invalidated")
-                return (False, status) 
+                return (False, status)
         else:
             log.msg("Invalid record type: %s" % type_)
             return (False, "Record not supported")
-            
+
     def get_record_details(self, name, record):
-        details = (mapper.get_typestring(record), 
-                   name, 
+        details = (mapper.get_typestring(record),
+                   name,
                    mapper.get_values(record)
                    )
         log.msg("Retreived Record: %s %s %s" % details)
         return details
-    
+
     """
     Convenience method for display of all records
     """
@@ -189,7 +189,7 @@ class RuntimeAuthority(FileAuthority):
         for name_rec in self.records.items():
             for r in name_rec[1]:
                 data.append(self.get_record_details(name_rec[0], r))
-        return data    
+        return data
 
     def get_records_by_name(self, name):
         data = []
@@ -198,12 +198,12 @@ class RuntimeAuthority(FileAuthority):
             for r in self.records[fullname]:
                 data.append(self.get_record_details(fullname, r))
         return data
-    
+
     def get_records_by_type(self, type_):
         data = []
         for k,v in self.records.items():
             data.extend([self.get_record_details(k, item) for item in v if mapper.get_typestring(item)== type_])
-        return data     
+        return data
 
     def delete_record(self, name):
         del self.records["%s.%s" % (name, self.domain)]
@@ -259,7 +259,7 @@ class MiniDNSServerFactory(DNSServerFactory):
                 os.chown(self.savedir, ent.pw_uid, ent.pw_gid)
         self.resolver = MiniDNSResolverChain([forward_resolver], self.savedir)
         self.verbose = True
-        self.load() 
+        self.load()
 
     def doStart(self):
         if not self.numPorts:
@@ -292,7 +292,7 @@ class DNSService(service.MultiService):
         self.conf = conf
         forwarders = self.conf['forwarders'].split()
         savedir = self.conf['savedir']
-        self.port = self.conf['udp_port']        
+        self.port = self.conf['udp_port']
         self.authorities = []
         self.factory = MiniDNSServerFactory(forwarders, savedir, self.get_ent())
         self.protocol = DNSDatagramProtocol(self.factory)
@@ -307,46 +307,20 @@ class DNSService(service.MultiService):
         return self.factory.zones()
 
     def startService(self):
-        udpservice = internet.UDPServer(53, self.protocol)
-        try:
-            udpservice.startService()
-            log.msg("Nameserver listening on port 53")
-        except CannotListenError:
-            log.msg("Nameserver cannot bind to port 53, trying %d" % self.port)
-            udpservice = internet.UDPServer(self.port, self.protocol)
-            udpservice.startService()
-            log.msg("Nameserver listening on port %d" % self.port)
-            self.port_forward()
+        udpservice = internet.UDPServer(self.port, self.protocol, interface="127.0.0.1")
+        udpservice.startService()
+        log.msg("Nameserver listening on port %d" % self.port)
         self.services.append(udpservice)
-        self.rewrite_and_monitor_resolvconf()
         self.drop_privileges()
-       
+
     def get_ent(self):
         ent = pwd.getpwnam(self.conf['user'])
-        return ent      
-        
+        return ent
+
     def drop_privileges(self):
         ent = pwd.getpwnam(self.conf['user'])
         switchUID(ent.pw_uid, ent.pw_gid)
-        
-    def rewrite_and_monitor_resolvconf(self):
-        """ If the only nameserver listed is 127.0.0.1, then we don't need to
-        rewrite resolv.conf. Otherwise we do some mad stuff. """
-        #path = os.path.dirname(sys.argv[0])
-        #subprocess.check_output([os.path.join(path, "resolvmgr"), str(os.getpid())])
 
     def stopService(self):
         service.MultiService.stopService(self)
-
-    def port_forward(self):
-        cmd = self.conf["port-forward"].format(port=self.conf['udp_port'])
-        rv = subprocess.call(shlex.split(cmd))
-        if rv != 0:
-            raise SystemExit("failed to execute %r" % cmd)
-
-    def port_unforward(self):
-        cmd = self.conf["port-unforward"].format(port=self.conf['udp_port'])
-        rv = subprocess.call(shlex.split(cmd))
-        if rv != 0:
-            raise SystemExit("failed to execute %r" % cmd)
 
