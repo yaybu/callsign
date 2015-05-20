@@ -28,23 +28,23 @@ setup(
     license="Apache Software License",
     include_package_data=True,
     zip_safe=False,
-    classifiers = [
+    classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Framework :: Twisted",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Topic :: Internet :: Name Service (DNS)",
-        ],
+    ],
     packages=find_packages(),
     install_requires=[
         'Twisted',
         'requests',
     ],
-    extras_require = {
+    extras_require={
         'test': ['mock'],
     },
-    entry_points = {
+    entry_points={
         "console_scripts": [
             "minidnscmd=minidns.scripts.command:run",
             "minidns-daemon=minidns.scripts.daemon:run",

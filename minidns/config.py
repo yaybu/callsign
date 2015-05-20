@@ -18,6 +18,7 @@
 import os
 from ConfigParser import ConfigParser
 
+
 def get_forwarders(resolv="resolv.conf"):
     """ Find the forwarders in /etc/resolv.conf, default to 8.8.8.8 and
     8.8.4.4 """
@@ -49,6 +50,7 @@ defaults = {
 int_fields = ["udp_port", "www_port"]
 bool_fields = ["forward", "rewrite"]
 
+
 def to_bool(x):
     if x.lower() in ("true", "yes", "on", "1"):
         return True
@@ -57,18 +59,23 @@ def to_bool(x):
     else:
         raise ValueError("%r in config file is not boolean" % x)
 
+
 def config(pathname):
     if pathname is not None:
         cp = ConfigParser()
         cp.read(pathname)
+
         def get(name, default):
             if cp.has_option("minidns", name):
                 return cp.get("minidns", name)
             else:
                 return default
+
     else:
+
         def get(name, default):
             return default
+
     d = {}
     for name, default in defaults.items():
         d[name] = get(name, default)
@@ -77,4 +84,3 @@ def config(pathname):
         elif name in bool_fields:
             d[name] = to_bool(d[name])
     return d
-

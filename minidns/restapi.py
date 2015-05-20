@@ -12,14 +12,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from zope.interface import implements
 from twisted.application import internet
 from twisted.web.server import Site
-from twisted.web.resource import Resource, NoResource
+from twisted.web.resource import Resource
 from twisted.python import log
 import socket
 import json
 import collections
+
 
 def flatten_values(vals):
     for val in vals:
@@ -28,6 +28,7 @@ def flatten_values(vals):
                 yield "\'%s\'" % sub
         else:
             yield val
+
 
 class RecordResource(Resource):
 
@@ -44,13 +45,13 @@ class RecordResource(Resource):
     def render_PUT(self, request):
         try:
             type_ = request.data.pop('type')
-        except ValueError, KeyError:
+        except (ValueError, KeyError):
             request.setResponseCode(400, message=self.err_invalid_body)
             return ""
         if not self.zone.check_type(type_):
             msg = self.err_wrong_record_type % type_
             request.setResponseCode(400, message=msg)
-            return "" 
+            return ""
         try:
             (success, msg) = self.zone.set_record(self.name, type_, request.data, True)
             if success:
@@ -80,6 +81,7 @@ class RecordResource(Resource):
         output = ["%s %s" % (type_, ' '.join(list(flatten_values(values)))) for type_, _name, values in results]
         return "\n".join(output).encode('utf-8')
 
+
 class DomainResource(Resource):
 
     def __init__(self, zone, dnsserver):
@@ -91,7 +93,7 @@ class DomainResource(Resource):
         results = self.zone.allrecords()
         log.msg('Zone results: %s' % results)
         if not results:
-            return "No Records found"        
+            return "No Records found"
         output = ["%s %s %s" % (name, type_, ' '.join(list(flatten_values(values)))) for type_, name, values in results]
         return "\n".join(output).encode("utf-8")
 
@@ -117,6 +119,7 @@ class DomainResource(Resource):
 
     def getChild(self, path, request):
         return RecordResource(path, self.zone)
+
 
 class MissingDomainResource(Resource):
 
@@ -144,11 +147,13 @@ class MissingDomainResource(Resource):
         request.setResponseCode(404)
         return ""
 
+
 class ForbiddenDomainResource(MissingDomainResource):
 
     def render_PUT(self, request):
         request.setResponseCode(403)
         return ""
+
 
 class RootResource(Resource):
 
@@ -181,10 +186,12 @@ class RootResource(Resource):
                 resource_type = ForbiddenDomainResource
             return resource_type(path, self.dnsserver.factory)
 
+
 class MiniDNSSite(Site):
 
     def log(self, *a, **kw):
         pass
+
 
 def webservice(config, dnsserver):
     root = RootResource(config, dnsserver)

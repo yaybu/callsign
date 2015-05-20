@@ -13,14 +13,17 @@
 #   limitations under the License.
 
 from twisted.trial import unittest
-from mock import MagicMock, PropertyMock
-from minidns.restapi import (RootResource, DomainResource,
-                             RecordResource,
-                             MissingDomainResource,
-                             ForbiddenDomainResource,
-                             NoResource)
+from mock import MagicMock
+from minidns.restapi import (
+    RootResource,
+    DomainResource,
+    RecordResource,
+    MissingDomainResource,
+    ForbiddenDomainResource,
+)
 
 import socket
+
 
 class TestRootResource(unittest.TestCase):
 
@@ -37,10 +40,12 @@ class TestRootResource(unittest.TestCase):
     def test_getChild_exists(self):
         self.config.get = MagicMock(return_value="")
         zone = MagicMock()
+
         def get_zone(x):
             if x == "foo":
                 return zone
             raise KeyError
+
         self.dnsserver.get_zone.side_effect = get_zone
         rv = self.resource.getChild("foo", None)
         self.assert_(isinstance(rv, DomainResource))
@@ -52,10 +57,12 @@ class TestRootResource(unittest.TestCase):
     def test_getChild_exists_with_lockdown(self):
         self.config.get = MagicMock(return_value="foo bar")
         zone = MagicMock()
+
         def get_zone(x):
             if x == "foo":
                 return zone
             raise KeyError
+
         self.dnsserver.get_zone.side_effect = get_zone
         rv = self.resource.getChild("foo", None)
         self.assert_(isinstance(rv, DomainResource))
@@ -78,10 +85,11 @@ class TestDomainResource(unittest.TestCase):
         data = [
             ("A", "www", "192.168.0.1"),
             ("A", "x", "192.168.0.2"),
-            ]
+        ]
         self.zone.a_records = MagicMock(return_value=data)
         rv = self.resource.render_GET(None)
-        self.assertEqual(rv, "\n".join(["%s %s %s" % (x,y,z) for (x,y,z) in data]))
+        self.assertEqual(rv, "\n".join(["%s %s %s" % (x, y, z) for (x, y, z) in data]))
+
 
 class TestMissingDomainResource(unittest.TestCase):
 
@@ -92,24 +100,25 @@ class TestMissingDomainResource(unittest.TestCase):
 
     def test_GET(self):
         request = MagicMock()
-        rv = self.resource.render_GET(request)
+        self.resource.render_GET(request)
         request.setResponseCode.assert_called_once_with(404)
 
     def test_PUT(self):
         request = MagicMock()
-        rv = self.resource.render_PUT(request)
+        self.resource.render_PUT(request)
         self.dnsserver.add_zone.assert_called_once_with(self.name)
         request.setResponseCode.assert_called_once_with(201)
 
     def test_HEAD(self):
         request = MagicMock()
-        rv = self.resource.render_GET(request)
+        self.resource.render_GET(request)
         request.setResponseCode.assert_called_once_with(404)
 
     def test_DELETE(self):
         request = MagicMock()
-        rv = self.resource.render_GET(request)
+        self.resource.render_GET(request)
         request.setResponseCode.assert_called_once_with(404)
+
 
 class TestRecordResource(unittest.TestCase):
 
@@ -161,5 +170,3 @@ class TestRecordResource(unittest.TestCase):
         self.zone.get_record.return_value = ("A", "192.168.0.1")
         rv = self.resource.render_GET(None)
         self.assertEqual(rv, "A 192.168.0.1")
-
-

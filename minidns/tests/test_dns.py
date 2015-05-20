@@ -16,8 +16,9 @@ import os
 import json
 
 from twisted.trial import unittest
-from minidns.dns import RuntimeAuthority, MiniDNSResolverChain, Record_A
-from mock import MagicMock, patch        
+from minidns.dns import RuntimeAuthority, Record_A
+from mock import MagicMock
+
 
 class TestRuntimeAuthority(unittest.TestCase):
 
@@ -32,7 +33,7 @@ class TestRuntimeAuthority(unittest.TestCase):
         foo_value.name = "foo"
         bar_value.name = "bar"
         foo_value.ttl = None
-        bar_value.ttl = None        
+        bar_value.ttl = None
         foo_value.compareAttributes = ('address', 'ttl')
         bar_value.compareAttributes = ('address', 'ttl')
         foo_value.dottedQuad.return_value = "192.168.0.1"
@@ -40,24 +41,23 @@ class TestRuntimeAuthority(unittest.TestCase):
         self.a.records = {
             "foo.foo": [foo_value],
             "bar.foo": [bar_value],
-            }
+        }
         rv = self.a.get_records_by_type("A")
         self.assertEqual(sorted(rv), [
             ("A", "bar.foo", ["192.168.0.2"]),
             ("A", "foo.foo", ["192.168.0.1"]),
-            ])
-    
+        ])
+
     def test_txt_records(self):
         pass
-        
+
     def test_cname_records(self):
         pass
-        
+
     def test_conflict_rules(self):
         pass
 
     def test_load(self):
-        from ..scripts.wingdbstub import *
         os.mkdir("savedir")
         json.dump((
             {"bar": {
@@ -73,7 +73,7 @@ class TestRuntimeAuthority(unittest.TestCase):
         self.assertEqual(self.a.records, {
             "bar.foo": [Record_A(address="192.168.1.1")],
             "baz.foo": [Record_A(address="192.168.1.2")],
-            })
+        })
         os.unlink("savedir/foo")
         os.rmdir("savedir")
 
@@ -92,4 +92,3 @@ class TestRuntimeAuthority(unittest.TestCase):
                 "address": "192.168.1.2",
             }}
         ])
-

@@ -14,33 +14,31 @@
 
 from zope.interface import implements
 
-from twisted.application import service, internet, strports
+from twisted.application import service, internet
 from twisted.names.server import DNSServerFactory
 from twisted.names.client import createResolver
 from twisted.names.authority import FileAuthority
 from twisted.names.common import ResolverBase
 from twisted.names.resolve import ResolverChain
-from twisted.names.dns import DNSDatagramProtocol, Record_A, Record_SOA
+from twisted.names.dns import DNSDatagramProtocol, Record_SOA
 from twisted.python import log
-from twisted.internet.error import CannotListenError
 
 from itertools import chain
 import os
-import sys
 import json
-import subprocess
-import shlex
 import pwd
 
 from twisted.python.util import switchUID
 
 import mapper
 
+
 def _getsubdomain(name, domain):
     domlen = len(domain)
     if name[-domlen:] == domain:
         return name[:-domlen].rstrip('.')
     return name
+
 
 # Need to cope with default TTL - seems to be an issue when not set
 def _is_record_valid(name, irecord, rec_list):
@@ -66,9 +64,10 @@ def _is_record_valid(name, irecord, rec_list):
     # if hostname matches, check that unique attrs differ
     for rec in match_rec_list:
         match_attr = mapper.unique_attr_map[type_]
-        if getattr(rec,match_attr) == getattr(irecord,match_attr):
+        if getattr(rec, match_attr) == getattr(irecord, match_attr):
             return (False, "%s already exists for this host with same information" % type_)
     return (True, "OK")
+
 
 class RuntimeAuthority(FileAuthority):
 
@@ -85,7 +84,8 @@ class RuntimeAuthority(FileAuthority):
         self.create_soa()
 
     def save(self):
-        if self.savefile is None: return
+        if self.savefile is None:
+            return
         # needs to be list, as can have multiple As for same host/sub, e.g.
         data = []
         # record type encodes itself as in mapper
@@ -105,7 +105,8 @@ class RuntimeAuthority(FileAuthority):
             os.rename(self.savefile + ".tmp", self.savefile)
 
     def load(self):
-        if self.savefile is None: return
+        if self.savefile is None:
+            return
         if os.path.exists(self.savefile):
             try:
                 # set dirty flag and re-save if invalid data in save file
@@ -135,7 +136,7 @@ class RuntimeAuthority(FileAuthority):
             expire="1H",
             minimum="1"
         )
-        self.soa=[self.domain.lower(), soa_rec]
+        self.soa = [self.domain.lower(), soa_rec]
 
     def set_record(self, name, type_, values, do_save):
         if type_ in mapper.record_types:
@@ -151,18 +152,18 @@ class RuntimeAuthority(FileAuthority):
             # have to special case data type for txt records, grrr
             if 'data' in values:
                 data = values.pop('data')
-                irecord = mapper.record_types[type_](*data,**values)
+                irecord = mapper.record_types[type_](*data, **values)
             else:
                 irecord = mapper.record_types[type_](**values)
 
             full_name = ("%s.%s" % (name, self.domain)).lower()
             log.msg("testing validity")
-            (is_valid, status) = _is_record_valid(name, irecord, self.records.get(full_name,[]))
+            (is_valid, status) = _is_record_valid(name, irecord, self.records.get(full_name, []))
 
             log.msg(status)
 
             if is_valid:
-                self.records.setdefault(full_name,[]).append(irecord)
+                self.records.setdefault(full_name, []).append(irecord)
                 if do_save:
                     self.save()
                 return (True, "Record Added")
@@ -185,7 +186,7 @@ class RuntimeAuthority(FileAuthority):
     Convenience method for display of all records
     """
     def allrecords(self):
-        data=[]
+        data = []
         for name_rec in self.records.items():
             for r in name_rec[1]:
                 data.append(self.get_record_details(name_rec[0], r))
@@ -201,13 +202,14 @@ class RuntimeAuthority(FileAuthority):
 
     def get_records_by_type(self, type_):
         data = []
-        for k,v in self.records.items():
-            data.extend([self.get_record_details(k, item) for item in v if mapper.get_typestring(item)== type_])
+        for k, v in self.records.items():
+            data.extend([self.get_record_details(k, item) for item in v if mapper.get_typestring(item) == type_])
         return data
 
     def delete_record(self, name):
         del self.records["%s.%s" % (name, self.domain)]
         self.save()
+
 
 class MiniDNSResolverChain(ResolverChain):
 
@@ -242,6 +244,7 @@ class MiniDNSResolverChain(ResolverChain):
 
     def zones(self):
         return self.authorities.keys()
+
 
 class MiniDNSServerFactory(DNSServerFactory):
 
@@ -283,6 +286,7 @@ class MiniDNSServerFactory(DNSServerFactory):
     def zones(self):
         return self.resolver.zones()
 
+
 class DNSService(service.MultiService):
 
     implements(service.IServiceCollection)
@@ -323,4 +327,3 @@ class DNSService(service.MultiService):
 
     def stopService(self):
         service.MultiService.stopService(self)
-

@@ -1,11 +1,7 @@
 
-from twisted.python import util
-import os
-import sys
-import shlex
-import subprocess
 import requests
 import json
+
 
 class MiniDNSClient:
 
@@ -54,14 +50,14 @@ class MiniDNSClient:
         if response.status_code != 204:
             self.handle_error(response, {
                 404: "Error: Zone %r is not managed by minidns" % name,
-                })
+            })
 
     def zone_show(self, name):
         response = requests.get("%s/%s" % (self.base_url, name))
         if response.status_code != 200:
             self.handle_error(response, {
                 404: "Error: Zone %r is not managed by minidns" % name
-                })
+            })
         else:
             if response.text:
                 for line in response.text.split("\n"):
@@ -82,8 +78,8 @@ class MiniDNSClient:
             self.handle_error(response, {
                 404: "Error: Zone %r is not managed by minidns" % zone,
                 400: response.reason
-                })
-            
+            })
+
     def record_txt(self, zone, host, data, ttl):
         url = "%s/%s" % (self.base_url, zone)
         payload = {host: {'type': 'TXT', 'data': [data]}}
@@ -95,8 +91,8 @@ class MiniDNSClient:
             self.handle_error(response, {
                 404: "Error: Zone %r is not managed by minidns" % zone,
                 400: response.reason
-                })    
-            
+            })
+
     def record_simple(self, zone, type_, host, name, ttl):
         url = "%s/%s" % (self.base_url, zone)
         payload = {host: {'type': type_, 'name': name}}
@@ -108,12 +104,11 @@ class MiniDNSClient:
             self.handle_error(response, {
                 404: "Error: Zone %r is not managed by minidns" % zone,
                 400: response.reason
-                })        
+            })
 
     def record_del(self, zone, host):
         response = requests.delete("%s/%s/%s" % (self.base_url, zone, host))
         if response.status_code != 204:
             self.handle_error(response, {
                 404: "Error: Record not found",
-                })
-
+            })

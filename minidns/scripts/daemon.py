@@ -9,6 +9,7 @@ from twisted.python.util import sibpath
 
 from minidns.config import config
 
+
 def spawn(opts, conf):
     """ Acts like twistd """
     if opts.config is not None:
@@ -20,7 +21,8 @@ def spawn(opts, conf):
     ]
     twistd.run()
 
-def run():    
+
+def run():
     parser = optparse.OptionParser()
     parser.add_option("-c", "--config", default="/etc/minidns.conf", help="path to configuration file")
     opts, args = parser.parse_args()

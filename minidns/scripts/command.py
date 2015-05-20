@@ -12,10 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
-import sys
 import optparse
-import pwd
 
 from minidns.config import config
 from minidns.client import MiniDNSClient
@@ -46,6 +43,7 @@ record commands:
     record example.com ns ns2.example.com.
     record example.com txt joe "This is Joe"
 """
+
 
 def run():
     parser = optparse.OptionParser(usage=usage)

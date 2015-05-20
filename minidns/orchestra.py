@@ -1,11 +1,9 @@
 
-import subprocess
-import shlex
-
 from twisted.application import service
 
 from .dns import DNSService
 from .restapi import webservice
+
 
 class OrchestrationService(service.MultiService):
 
