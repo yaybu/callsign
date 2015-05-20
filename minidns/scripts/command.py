@@ -30,14 +30,24 @@ zone commands:
     show name list records for the zone "name"
 
 record commands:
-    record [zone] a [host] [data]   create A record
-    record [zone] del [host]        delete record
+    record [zone] a [host] [data]      create A record
+    record [zone] cname [host] [data]  create CNAME record
+    record [zone] txt [host] [data]    create TXT record
+    record [zone] ns [host] [data]     create NS record
+    record [zone] del [host]           delete record
 
-    e.g. record example.com a www 192.168.0.1"""
+    e.g.
 
+    record example.com a www 192.168.0.1
+    record example.com cname mail www
+    record example.com cname mail www.example.com.
+    record example.com mx 10 mail
+    record example.com mx 10 mail.other.com.
+    record example.com ns ns2.example.com.
+    record example.com txt joe "This is Joe"
+"""
 
-
-def run():    
+def run():
     parser = optparse.OptionParser(usage=usage)
     parser.add_option("-c", "--config", help="path to configuration file")
     opts, args = parser.parse_args()
@@ -103,7 +113,7 @@ def run():
             data = args[4]
             if len(args) == 6:
                 ttl = args[5]
-            client.record_txt(zone, host, data, ttl)            
+            client.record_txt(zone, host, data, ttl)
         elif command == "del":
             client.record_del(zone, host)
         else:
