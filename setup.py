@@ -18,10 +18,10 @@ from setuptools import setup, find_packages
 version = '0.4.dev0'
 
 setup(
-    name="minidns",
+    name="callsign",
     version=version,
     description="Simple DNS Server with REST API, for localhost only",
-    url="http://github.com/yaybu/minidns",
+    url="http://github.com/yaybu/callsign",
     long_description=open("README.rst").read(),
     author="Doug Winter",
     author_email="doug.winter@isotoma.com",
@@ -46,8 +46,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "minidnscmd=minidns.scripts.command:run",
-            "minidns-daemon=minidns.scripts.daemon:run",
+            "callsigncmd=callsign.scripts.command:run",
+            "callsign-daemon=callsign.scripts.daemon:run",
         ]
     }
 )

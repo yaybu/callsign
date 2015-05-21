@@ -1,6 +1,6 @@
 exclude *
-recursive-include minidns *
-include minidns/scripts/minidns.tac
+recursive-include callsign *
+include callsign/scripts/callsign.tac
 global-exclude *.pyc
 include setup.py
 include MANIFEST.in

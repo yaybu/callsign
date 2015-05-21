@@ -1,19 +1,19 @@
-=======
-minidns
-=======
+========
+Callsign
+========
 
 :Date: 2013-09-11
 :Author: Doug Winter <doug.winter@isotoma.com>
-:Website: http://github.com/yaybu/minidns
+:Website: http://github.com/yaybu/callsign
 
 Description
 ===========
 
-MiniDNS is a DNS server for developers. It is intended to serve DNS only for a
+Callsign is a DNS server for developers. It is intended to serve DNS only for a
 single machine - your desktop. It will support automated deployment systems
 that coordinate with DNS services, for example Yaybu.
 
-Desktops vary in their client DNS configuration quite widely, and MiniDNS
+Desktops vary in their client DNS configuration quite widely, and Callsign
 supports a number of different modes to enable it to service your DNS effectively.
 
 The DNS service provides recursive queries, so you can continue to use DNS as usual.
@@ -23,28 +23,28 @@ locally.
 
 For example::
 
-    $ minidns start
+    $ callsign start
     $ host www.example.com
     www.example.com has address 93.184.216.119
     www.example.com has IPv6 address 2606:2800:220:6d:26bf:1447:1097:aa7
-    $ minidns add example.com
-    $ minidns record example.com a www 192.168.0.10
-    $ minidns show example.com
+    $ callsign add example.com
+    $ callsign record example.com a www 192.168.0.10
+    $ callsign show example.com
     www 192.168.0.10
     $ host www.example.com
     www.example.com has address 192.168.0.10
-    $ minidns stop
+    $ callsign stop
     $ host www.example.com
     www.example.com has address 93.184.216.119
     www.example.com has IPv6 address 2606:2800:220:6d:26bf:1447:1097:aa7
 
 Usage::
 
-    Usage: minidns [options] command
+    Usage: callsign [options] command
 
     daemon control commands:
-        start  start the minidns server and forward localhost:53 to it
-        stop   stop the minidns server and remove iptables rules
+        start  start the callsign server and forward localhost:53 to it
+        stop   stop the callsign server and remove iptables rules
 
     zone commands:
         add name  add a new local authoritative zone "name"
@@ -69,22 +69,22 @@ Modes of operation
 For the standard libc resolver DNS services must be provided on port 53 - there
 is no option for the resolver to consult other ports.
 
-Note that minidns drops privileges once ports are bound, it does not continue to run as root.
+Note that callsign drops privileges once ports are bound, it does not continue to run as root.
 configured (which also requires root).
 
-The user that minidns runs as (by default, 'minidns') must already exist on the system. If not installed
+The user that callsign runs as (by default, 'callsign') must already exist on the system. If not installed
 by the package manager, run something like:
 
-    sudo useradd -r -s /bin/false minidns
+    sudo useradd -r -s /bin/false callsign
 
 The standard configuration for the libc resolver is in /etc/resolv.conf. This
 file will need to have only a single nameserver, 127.0.0.1, configured for
-MiniDNS to work. MiniDNS provides options to overwrite the configuration in
+Callsign to work. Callsign provides options to overwrite the configuration in
 resolv.conf as part of starting up. It will then replace the previous
 configuration when it is stopped.
 
-Finally MiniDNS requires "forwarders" - other servers that will answer
-recursive queries for domains for which MiniDNS is not authoritative.
+Finally Callsign requires "forwarders" - other servers that will answer
+recursive queries for domains for which Callsign is not authoritative.
 
 
 Configuring behaviour
@@ -109,17 +109,17 @@ A configuration file is not required. Note that Google's DNS servers are used as
 
 If you wish, you can provide a file with the following format (defaults are shown)::
 
-    [minidns]
+    [callsign]
     forwarders = 8.8.8.8 8.8.4.4
     udp_port = 53
     www_port = 5080
-    pidfile = /var/run/minidns.pid
-    logfile = /var/log/minidns.log
+    pidfile = /var/run/callsign.pid
+    logfile = /var/log/callsign.log
     domains =
-    savedir = /var/lib/.minidns
+    savedir = /var/lib/.callsign
     forward = true
     rewrite = true
-    user = minidns
+    user = callsign
 
 If any domains are listed then only those domains will be allowed::
 
@@ -130,7 +130,7 @@ If any domains are listed then only those domains will be allowed::
 API
 ===
 
-MiniDNS is designed primarily to be used by automated deployment systems, and
+Callsign is designed primarily to be used by automated deployment systems, and
 provides a simple REST API for these systems.
 
 In general you should expect the following response codes on a successful request:
@@ -175,7 +175,7 @@ Return the list of records within this domain, one per line, separated by \n.  F
 Possible status code responses are:
 
  * *200* Success
- * *404* Domain not found. The domain has not been created as an authoritative zone in minidns.
+ * *404* Domain not found. The domain has not been created as an authoritative zone in callsign.
 
 PUT
 ~~~
@@ -204,7 +204,7 @@ Delete this domain.  For example::
 Possible status code responses are:
 
  * *204* Success
- * *404* Domain not found. The domain has not been created as an authoritative zone in minidns.
+ * *404* Domain not found. The domain has not been created as an authoritative zone in callsign.
 
 Record resource: /domain/host
 -----------------------------

@@ -1,4 +1,4 @@
-Source: minidns
+Source: callsign
 Maintainer: Doug Winter <doug.winter@isotoma.com>
 Section: python
 Priority: optional
@@ -7,26 +7,26 @@ Standards-Version: 3.9.1
 
 
 
-Package: minidns
+Package: callsign
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}
 Description: Simple DNS Server with REST API, for localhost only
  =======
- minidns
+ callsign
  =======
  .
  :Date: 2013-09-11
  :Author: Doug Winter <doug.winter@isotoma.com>
- :Website: http://github.com/yaybu/minidns
+ :Website: http://github.com/yaybu/callsign
  .
  Description
  ===========
  .
- MiniDNS is a DNS server for developers. It is intended to serve DNS only for a
+ Callsign is a DNS server for developers. It is intended to serve DNS only for a
  single machine - your desktop. It will support automated deployment systems
  that coordinate with DNS services, for example Yaybu.
  .
- Desktops vary in their client DNS configuration quite widely, and MiniDNS
+ Desktops vary in their client DNS configuration quite widely, and Callsign
  supports a number of different modes to enable it to service your DNS effectively.
  .
  The DNS service provides recursive queries, so you can continue to use DNS as usual.
