@@ -6,6 +6,7 @@ Changelog for Callsign
 
 - Allow domain list to be locked down using the configuration file
 - Remove support for TCP, not required
+- Renamed from MiniDNS to Callsign
 
 0.3 (2013-09-11)
 ----------------
