@@ -1,0 +1,9 @@
+# Automatically added by dh_installinit
+if [ "$1" = install ] || [ "$1" = upgrade ]; then
+	if [ -e "/etc/init.d/callsign" ] && [ -L "/etc/init.d/callsign" ] \
+	   && [ $(readlink -f "/etc/init.d/callsign") = /lib/init/upstart-job ]
+	then
+		rm -f "/etc/init.d/callsign"
+	fi
+fi
+# End automatically added section
